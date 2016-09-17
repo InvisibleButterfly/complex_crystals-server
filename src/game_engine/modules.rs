@@ -21,7 +21,7 @@ impl DriveModule {
                 object.x -= self.speed;
             }
         }
-        if !((object.y - self.dest_y).abs() < ::FLOAT_ERR)  {
+        if !((object.y - self.dest_y).abs() < ::FLOAT_ERR) {
             if object.y < self.dest_y {
                 object.y += self.speed;
             } else if object.y > self.dest_y {
@@ -42,4 +42,24 @@ pub enum RadarTypes {
 pub struct RadarModule {
     pub radius: f64,
     pub rtype: RadarTypes,
+}
+
+impl RadarModule {
+    pub fn get_nearby_objects(&self,
+                              obj_x: f64,
+                              obj_y: f64,
+                              objects: &Vec<SampleObject>)
+                              -> Option<Vec<Box<SampleObject>>> {
+        let mut result = vec![];
+        for object in objects.clone() {
+            if distance(obj_x, obj_y, object.x, object.y) <= self.radius {
+                result.push(Box::new(object));
+            }
+        }
+        Some(result)
+    }
+}
+
+fn distance(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
+    ((x1 - x2).powi(2) + (y1 - y2).powi(2)).sqrt()
 }

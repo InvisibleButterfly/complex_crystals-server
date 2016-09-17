@@ -68,5 +68,16 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
         }
     });
 
+    let cloned_engine = mutex.clone();
+    router.add_route("radar".to_string(), move |req: &mut Request| {
+        let mut buf = String::new();
+        req.body.read_to_string(&mut buf).unwrap();
+
+        match requests::radar(&cloned_engine, buf) {
+            Some(response) => Ok(Response::with((status::Ok, response))),
+            None => Ok(Response::with((status::Ok))),
+        }
+    });
+
     Iron::new(router).http("localhost:3000").unwrap();
 }

@@ -10,8 +10,14 @@ pub struct ServerInfo {
 }
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
+pub enum ObjectType {
+    Ship,
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct SampleObject {
     pub name: String,
+    pub otype: ObjectType,
     pub x: f64,
     pub y: f64,
     pub drive: DriveModule,
@@ -46,6 +52,7 @@ impl GameEngine {
                       radar_type: RadarTypes) {
         self.objects.push(SampleObject {
             name: object_name,
+            otype: ObjectType::Ship,
             x: coord_x,
             y: coord_y,
             drive: DriveModule {
@@ -58,6 +65,15 @@ impl GameEngine {
                 rtype: radar_type,
             },
         });
+    }
+
+    pub fn get_object(&self, name: String) -> Option<Box<SampleObject>> {
+        for object in self.objects.clone() {
+            if object.name == name {
+                return Some(Box::new(object));
+            }
+        }
+        None
     }
 
     pub fn set_object_dest(&mut self, object_name: String, x: f64, y: f64) {
