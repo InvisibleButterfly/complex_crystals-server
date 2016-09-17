@@ -15,14 +15,14 @@ impl DriveModule {
     }
 
     pub fn update(&mut self, object: &mut SampleObject) {
-        if !(object.x == self.dest_x) {
+        if !((object.x - self.dest_x).abs() < ::FLOAT_ERR) {
             if object.x < self.dest_x {
                 object.x += self.speed;
             } else if object.x > self.dest_x {
                 object.x -= self.speed;
             }
         }
-        if !(object.y == self.dest_y) {
+        if !((object.y - self.dest_y).abs() < ::FLOAT_ERR)  {
             if object.y < self.dest_y {
                 object.y += self.speed;
             } else if object.y > self.dest_y {

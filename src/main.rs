@@ -9,6 +9,8 @@ use game_engine::GameEngine;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
+const FLOAT_ERR: f64 = std::f64::EPSILON;
+
 fn main() {
     let mutex_engine = Arc::new(Mutex::new(GameEngine::new()));
 
