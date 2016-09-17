@@ -1,6 +1,6 @@
 pub mod modules;
 
-use self::modules::DriveModule;
+use self::modules::*;
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ServerInfo {
@@ -15,6 +15,7 @@ pub struct SampleObject {
     pub x: f64,
     pub y: f64,
     pub drive: DriveModule,
+    pub radar: RadarModule,
 }
 
 pub struct GameEngine {
@@ -37,7 +38,12 @@ impl GameEngine {
         self.info.tps = tps;
     }
 
-    pub fn add_object(&mut self, object_name: String, coord_x: f64, coord_y: f64) {
+    pub fn add_object(&mut self,
+                      object_name: String,
+                      coord_x: f64,
+                      coord_y: f64,
+                      radar_radius: f64,
+                      radar_type: RadarTypes) {
         self.objects.push(SampleObject {
             name: object_name,
             x: coord_x,
@@ -46,6 +52,10 @@ impl GameEngine {
                 speed: 0.1f64,
                 dest_x: coord_x,
                 dest_y: coord_y,
+            },
+            radar: RadarModule {
+                radius: radar_radius,
+                rtype: radar_type,
             },
         });
     }

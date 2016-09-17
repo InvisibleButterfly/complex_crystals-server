@@ -7,7 +7,6 @@ pub struct DriveModule {
     pub dest_y: f64,
 }
 
-
 impl DriveModule {
     pub fn set_dest(&mut self, x: f64, y: f64) {
         self.dest_x = x;
@@ -30,4 +29,17 @@ impl DriveModule {
             }
         }
     }
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub enum RadarTypes {
+    Simple,
+    Middle,
+    Military,
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub struct RadarModule {
+    pub radius: f64,
+    pub rtype: RadarTypes,
 }
