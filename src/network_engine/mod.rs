@@ -1,8 +1,10 @@
+mod requests;
+mod structures;
+
 use super::game_engine::GameEngine;
 
 use std::sync::{Arc, Mutex};
 use std::io::Read;
-use rustc_serialize::json;
 
 use std::collections::HashMap;
 
@@ -40,28 +42,29 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
 
     let cloned_engine = mutex.clone();
     router.add_route("objects".to_string(), move |_: &mut Request| {
-        let engine = cloned_engine.lock().unwrap();
-        let resp_json = json::encode(&engine.objects).unwrap();
-        Ok(Response::with((status::Ok, resp_json)))
+        match requests::objects(&cloned_engine) {
+            Some(response) => Ok(Response::with((status::Ok, response))),
+            None => Ok(Response::with((status::Ok))), // TODO: Заменить на ошибку, хотя вряд ли она может тут возникнуть
+        }
+    });
+
+    let cloned_engine = mutex.clone();
+    router.add_route("move".to_string(), move |req: &mut Request| {
+        let mut buf = String::new();
+        req.body.read_to_string(&mut buf).unwrap();
+
+        match requests::move_object(&cloned_engine, buf) {
+            true => Ok(Response::with((status::Ok))),
+            false => Ok(Response::with((status::Ok))), // TODO: Заменить на ошибку
+        }
     });
 
     let cloned_engine = mutex.clone();
     router.add_route("info".to_string(), move |_: &mut Request| {
-        let engine = cloned_engine.lock().unwrap();
-        let resp_json = json::encode(&engine.info).unwrap();
-        Ok(Response::with((status::Ok, resp_json)))
-    });
-
-    let cloned_engine = mutex.clone();
-    router.add_route("set_info".to_string(), move |req: &mut Request| {
-        let mut engine = cloned_engine.lock().unwrap();
-        let mut buf = String::new();
-        req.body.read_to_string(&mut buf).unwrap();
-        match json::decode(&buf) {
-            Err(e) => println!("Json parsing error: {:?}", e),
-            Ok(info) => engine.info = info,
+        match requests::info(&cloned_engine) {
+            Some(response) => Ok(Response::with((status::Ok, response))),
+            None => Ok(Response::with((status::Ok))), // TODO: Заменить на ошибку, хотя вряд ли она тут будет
         }
-        Ok(Response::with((status::Ok)))
     });
 
     Iron::new(router).http("localhost:3000").unwrap();

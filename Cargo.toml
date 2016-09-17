@@ -5,9 +5,5 @@ authors = ["97nomad <97nomad@gmail.com>"]
 
 [dependencies]
 iron = "*"
-serde = "*"
-persistent = "*"
 rustc-serialize = "*"
-
-[dependencies.bodyparser]
-git = "https://github.com/iron/body-parser.git"
+time = "*"
