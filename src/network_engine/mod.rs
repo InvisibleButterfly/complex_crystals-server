@@ -53,9 +53,10 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
         let mut buf = String::new();
         req.body.read_to_string(&mut buf).unwrap();
 
-        match requests::move_object(&cloned_engine, buf) {
-            true => Ok(Response::with((status::Ok))),
-            false => Ok(Response::with((status::Ok))), // TODO: Заменить на ошибку
+        if requests::move_object(&cloned_engine, buf) {
+            Ok(Response::with((status::Ok)))
+        } else {
+            Ok(Response::with((status::Ok))) // TODO: Заменить на ошибку
         }
     });
 
