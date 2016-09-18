@@ -9,7 +9,7 @@ use game_engine::GameEngine;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use game_engine::modules::RadarTypes;
+use game_engine::ObjectType;
 const FLOAT_ERR: f64 = std::f64::EPSILON;
 
 fn main() {
@@ -18,13 +18,11 @@ fn main() {
     mutex_engine.lock().unwrap().add_object("Object1".to_string(),
                                             10.0f64,
                                             20.0f64,
-                                            0.0,
-                                            RadarTypes::Simple);
+                                            ObjectType::Harvester);
     mutex_engine.lock().unwrap().add_object("Object2".to_string(),
                                             100.0f64,
                                             10.0f64,
-                                            0.0,
-                                            RadarTypes::Simple);
+                                            ObjectType::Harvester);
 
     let cloned_engine = mutex_engine.clone();
     thread::spawn(move || network_engine::start(cloned_engine));
@@ -32,18 +30,14 @@ fn main() {
     mutex_engine.lock().unwrap().add_object("Object3".to_string(),
                                             100.0f64,
                                             10.0f64,
-                                            100.0,
-                                            RadarTypes::Middle);
-    mutex_engine.lock().unwrap().add_object("Object4".to_string(),
-                                            200.0,
-                                            200.0,
-                                            1000.0,
-                                            RadarTypes::Middle);
+                                            ObjectType::Harvester);
+    mutex_engine.lock()
+        .unwrap()
+        .add_object("Object4".to_string(), 200.0, 200.0, ObjectType::Harvester);
     mutex_engine.lock().unwrap().add_object("Battlecruiser".to_string(),
                                             500.0,
                                             300.0,
-                                            1000.0,
-                                            RadarTypes::Military);
+                                            ObjectType::Battlecruiser);
     mutex_engine.lock().unwrap().set_object_dest("Battlecruiser".to_string(), 0.0, 0.0);
 
     let interval = 1_000_000_000 / 60;

@@ -11,7 +11,8 @@ pub struct ServerInfo {
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub enum ObjectType {
-    Ship,
+    Harvester,
+    Battlecruiser,
 }
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
@@ -48,23 +49,43 @@ impl GameEngine {
                       object_name: String,
                       coord_x: f64,
                       coord_y: f64,
-                      radar_radius: f64,
-                      radar_type: RadarTypes) {
-        self.objects.push(SampleObject {
-            name: object_name,
-            otype: ObjectType::Ship,
-            x: coord_x,
-            y: coord_y,
-            drive: DriveModule {
-                speed: 0.001f64,
-                dest_x: coord_x,
-                dest_y: coord_y,
-            },
-            radar: RadarModule {
-                radius: radar_radius,
-                rtype: radar_type,
-            },
-        });
+                      otype: ObjectType) {
+        match otype {
+            ObjectType::Harvester => {
+                self.objects.push(SampleObject {
+                    name: object_name,
+                    otype: ObjectType::Harvester,
+                    x: coord_x,
+                    y: coord_y,
+                    drive: DriveModule {
+                        speed: 0.001,
+                        dest_x: coord_x,
+                        dest_y: coord_y,
+                    },
+                    radar: RadarModule {
+                        radius: 100.0,
+                        rtype: RadarTypes::Middle,
+                    },
+                });
+            }
+            ObjectType::Battlecruiser => {
+                self.objects.push(SampleObject {
+                    name: object_name,
+                    otype: ObjectType::Battlecruiser,
+                    x: coord_x,
+                    y: coord_y,
+                    drive: DriveModule {
+                        speed: 0.002,
+                        dest_x: coord_x,
+                        dest_y: coord_y,
+                    },
+                    radar: RadarModule {
+                        radius: 300.0,
+                        rtype: RadarTypes::Military,
+                    },
+                });
+            }
+        }
     }
 
     pub fn get_object(&self, name: String) -> Option<Box<SampleObject>> {

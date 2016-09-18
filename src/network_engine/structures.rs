@@ -5,6 +5,7 @@ pub struct SampleObjectResponse {
     pub name: String,
     pub x: f64,
     pub y: f64,
+    pub otype: ObjectType,
 }
 
 #[derive(RustcDecodable, RustcEncodable)]
