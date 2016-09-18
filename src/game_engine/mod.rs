@@ -56,7 +56,7 @@ impl GameEngine {
             x: coord_x,
             y: coord_y,
             drive: DriveModule {
-                speed: 0.1f64,
+                speed: 0.001f64,
                 dest_x: coord_x,
                 dest_y: coord_y,
             },
@@ -87,7 +87,7 @@ impl GameEngine {
     pub fn game_loop(&mut self, elapsed: f64) {
         for mut object in &mut self.objects {
             let mut drv = &mut object.drive.clone();
-            drv.update(&mut object);
+            drv.update(&mut object, elapsed);
         }
     }
 }

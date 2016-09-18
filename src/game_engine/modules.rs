@@ -13,19 +13,19 @@ impl DriveModule {
         self.dest_y = y;
     }
 
-    pub fn update(&mut self, object: &mut SampleObject) {
+    pub fn update(&mut self, object: &mut SampleObject, elapsed: f64) {
         if !((object.x - self.dest_x).abs() < ::FLOAT_ERR) {
             if object.x < self.dest_x {
-                object.x += self.speed;
+                object.x += self.speed * elapsed;
             } else if object.x > self.dest_x {
-                object.x -= self.speed;
+                object.x -= self.speed * elapsed;
             }
         }
         if !((object.y - self.dest_y).abs() < ::FLOAT_ERR) {
             if object.y < self.dest_y {
-                object.y += self.speed;
+                object.y += self.speed * elapsed;
             } else if object.y > self.dest_y {
-                object.y -= self.speed;
+                object.y -= self.speed * elapsed;
             }
         }
     }
