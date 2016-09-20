@@ -20,7 +20,7 @@ pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
 }
 
 pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String) -> bool {
-    let mut engine = mutex.lock().unwrap();
+    let engine = mutex.lock().unwrap();
     match json::decode(&input) {
         Err(e) => {
             println!("Json parsing error: {:?}", e);
@@ -28,7 +28,16 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
         }
         Ok(data) => {
             let mvr: MoveObjectRequest = data;
-            engine.set_object_dest(mvr.name, mvr.x, mvr.y, owner);
+            let mut object = match engine.get_object(mvr.name) {
+                Some(expr) => expr.clone(),
+                None => return false,
+            };
+
+            if object.owner != owner {
+                return false;
+            }
+
+            object.drive.set_dest(mvr.x, mvr.y);
         }
     }
     true
