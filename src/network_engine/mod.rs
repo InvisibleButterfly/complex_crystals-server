@@ -5,12 +5,12 @@ use super::game_engine::GameEngine;
 
 use std::sync::{Arc, Mutex};
 use std::io::Read;
-
 use std::collections::HashMap;
 
 use iron::prelude::*;
 use iron::Handler;
 use iron::status;
+use iron::headers::{Authorization, Basic};
 
 struct Router {
     routes: HashMap<String, Box<Handler>>,
@@ -41,7 +41,10 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
     let mut router = Router::new();
 
     let cloned_engine = mutex.clone();
-    router.add_route("objects".to_string(), move |_: &mut Request| {
+    router.add_route("objects".to_string(), move |req: &mut Request| {
+        if !check_username(&req, "admin".to_owned()) {
+            return Ok(Response::with((status::Ok))); // TODO: А вот тут должна быть ошибка
+        }
         match requests::objects(&cloned_engine) {
             Some(response) => Ok(Response::with((status::Ok, response))),
             None => Ok(Response::with((status::Ok))), // TODO: Заменить на ошибку, хотя вряд ли она может тут возникнуть
@@ -53,7 +56,7 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
         let mut buf = String::new();
         req.body.read_to_string(&mut buf).unwrap();
 
-        if requests::move_object(&cloned_engine, buf) {
+        if requests::move_object(&cloned_engine, buf, get_username(&req)) {
             Ok(Response::with((status::Ok)))
         } else {
             Ok(Response::with((status::Ok))) // TODO: Заменить на ошибку
@@ -73,11 +76,32 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
         let mut buf = String::new();
         req.body.read_to_string(&mut buf).unwrap();
 
-        match requests::radar(&cloned_engine, buf) {
+        match requests::radar(&cloned_engine, buf, get_username(&req)) {
             Some(response) => Ok(Response::with((status::Ok, response))),
             None => Ok(Response::with((status::Ok))),
         }
     });
 
     Iron::new(router).http("localhost:3000").unwrap();
+}
+
+// Возвращает логин пользователя или "unknown" при его отсутствии
+fn get_username(req: &Request) -> String {
+    match req.headers.get::<Authorization<Basic>>() {
+        Some(expr) => expr.username.clone(),
+        None => "unknown".to_owned(),
+    }
+}
+
+fn check_username(req: &Request, username: String) -> bool {
+    match req.headers.get::<Authorization<Basic>>() {
+        Some(expr) => {
+            if expr.username != username {
+                return false;
+            } else {
+                return true;
+            }
+        }
+        None => false,  
+    }
 }

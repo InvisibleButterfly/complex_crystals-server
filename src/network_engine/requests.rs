@@ -19,7 +19,7 @@ pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     Some(json::encode(&objects).unwrap())
 }
 
-pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String) -> bool {
+pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String) -> bool {
     let mut engine = mutex.lock().unwrap();
     match json::decode(&input) {
         Err(e) => {
@@ -28,7 +28,7 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String) -> bool {
         }
         Ok(data) => {
             let mvr: MoveObjectRequest = data;
-            engine.set_object_dest(mvr.name, mvr.x, mvr.y);
+            engine.set_object_dest(mvr.name, mvr.x, mvr.y, owner);
         }
     }
     true
@@ -39,7 +39,7 @@ pub fn info(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     Some(json::encode(&engine.info).unwrap())
 }
 
-pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String) -> Option<String> {
+pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> Option<String> {
     let engine = mutex.lock().unwrap();
     match json::decode(&request) {
         Err(e) => {
@@ -53,6 +53,10 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String) -> Option<String> 
                 Some(expr) => expr.clone(),
                 None => return None,
             };
+
+            if object.owner != owner {
+                return None;
+            }
 
             let objects = match object.radar
                 .get_nearby_objects(object.x, object.y, &engine.objects) {

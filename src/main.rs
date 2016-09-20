@@ -18,11 +18,13 @@ fn main() {
     mutex_engine.lock().unwrap().add_object("Object1".to_string(),
                                             10.0f64,
                                             20.0f64,
-                                            ObjectType::Harvester);
+                                            ObjectType::Harvester,
+                                            "unknown".to_owned());
     mutex_engine.lock().unwrap().add_object("Object2".to_string(),
                                             100.0f64,
                                             10.0f64,
-                                            ObjectType::Harvester);
+                                            ObjectType::Harvester,
+                                            "player".to_owned());
 
     let cloned_engine = mutex_engine.clone();
     thread::spawn(move || network_engine::start(cloned_engine));
@@ -30,15 +32,23 @@ fn main() {
     mutex_engine.lock().unwrap().add_object("Object3".to_string(),
                                             100.0f64,
                                             10.0f64,
-                                            ObjectType::Harvester);
+                                            ObjectType::Harvester,
+                                            "player".to_owned());
     mutex_engine.lock()
         .unwrap()
-        .add_object("Object4".to_string(), 200.0, 200.0, ObjectType::Harvester);
+        .add_object("Object4".to_string(),
+                    200.0,
+                    200.0,
+                    ObjectType::Harvester,
+                    "player".to_owned());
     mutex_engine.lock().unwrap().add_object("Battlecruiser".to_string(),
                                             500.0,
                                             300.0,
-                                            ObjectType::Battlecruiser);
-    mutex_engine.lock().unwrap().set_object_dest("Battlecruiser".to_string(), 0.0, 0.0);
+                                            ObjectType::Battlecruiser,
+                                            "player".to_owned());
+    mutex_engine.lock()
+        .unwrap()
+        .set_object_dest("Battlecruiser".to_string(), 0.0, 0.0, "player".to_owned());
 
     let interval = 1_000_000_000 / 60;
     let mut before = time::precise_time_ns();

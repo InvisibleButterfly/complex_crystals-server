@@ -17,6 +17,7 @@ pub enum ObjectType {
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct SampleObject {
+    pub owner: String,
     pub name: String,
     pub otype: ObjectType,
     pub x: f64,
@@ -49,10 +50,12 @@ impl GameEngine {
                       object_name: String,
                       coord_x: f64,
                       coord_y: f64,
-                      otype: ObjectType) {
+                      otype: ObjectType,
+                      owner: String) {
         match otype {
             ObjectType::Harvester => {
                 self.objects.push(SampleObject {
+                    owner: owner,
                     name: object_name,
                     otype: ObjectType::Harvester,
                     x: coord_x,
@@ -70,6 +73,7 @@ impl GameEngine {
             }
             ObjectType::Battlecruiser => {
                 self.objects.push(SampleObject {
+                    owner: owner,
                     name: object_name,
                     otype: ObjectType::Battlecruiser,
                     x: coord_x,
@@ -97,10 +101,12 @@ impl GameEngine {
         None
     }
 
-    pub fn set_object_dest(&mut self, object_name: String, x: f64, y: f64) {
+    pub fn set_object_dest(&mut self, object_name: String, x: f64, y: f64, owner: String) {
         for obj in &mut self.objects {
             if obj.name == object_name {
-                obj.drive.set_dest(x, y);
+                if obj.owner == owner {
+                    obj.drive.set_dest(x, y);
+                }
                 break;
             }
         }
