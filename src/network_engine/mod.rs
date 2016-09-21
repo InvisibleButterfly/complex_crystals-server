@@ -41,6 +41,14 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
     let mut router = Router::new();
 
     let cloned_engine = mutex.clone();
+    router.add_route("world_size".to_owned(), move |_: &mut Request| {
+        match requests::world_size(&cloned_engine) {
+            Some(expr) => Ok(Response::with((status::Ok, expr))),
+            None => Ok(Response::with((status::Ok))),
+        }
+    });
+
+    let cloned_engine = mutex.clone();
     router.add_route("objects".to_string(), move |req: &mut Request| {
         if !check_username(&req, "admin".to_owned()) {
             return Ok(Response::with((status::Ok))); // TODO: А вот тут должна быть ошибка

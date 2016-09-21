@@ -29,6 +29,8 @@ pub struct SampleObject {
 pub struct GameEngine {
     pub info: ServerInfo,
     pub objects: Vec<SampleObject>,
+    pub world_size_x: f64,
+    pub world_size_y: f64,
 }
 
 impl GameEngine {
@@ -40,6 +42,8 @@ impl GameEngine {
                 status: "Ok".to_string(),
                 tps: 0u16,
             },
+            world_size_x: 800.0,
+            world_size_y: 600.0,
         }
     }
     pub fn update_tps(&mut self, tps: u16) {

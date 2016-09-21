@@ -4,6 +4,15 @@ use ::rustc_serialize::json;
 use ::network_engine::structures::*;
 use ::game_engine::modules::RadarTypes;
 
+pub fn world_size(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
+    let engine = mutex.lock().unwrap();
+    let response = WorldSizeResponse {
+        width: engine.world_size_x,
+        height: engine.world_size_y,
+    };
+    Some(json::encode(&response).unwrap())
+}
+
 pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     let engine = mutex.lock().unwrap();
 
@@ -27,7 +36,7 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
             return false;
         }
         Ok(data) => {
-            let mvr: MoveObjectRequest = data;
+            let mut mvr: MoveObjectRequest = data;
             let mut object = match engine.get_object(mvr.name) {
                 Some(expr) => expr.clone(),
                 None => return false,
@@ -35,6 +44,13 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
 
             if object.owner != owner {
                 return false;
+            }
+
+            if mvr.x > engine.world_size_x {
+                mvr.x = engine.world_size_x;
+            }
+            if mvr.y > engine.world_size_y {
+                mvr.y = engine.world_size_y;
             }
 
             object.drive.set_dest(mvr.x, mvr.y);

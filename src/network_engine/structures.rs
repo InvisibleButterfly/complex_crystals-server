@@ -1,6 +1,12 @@
 use ::game_engine::ObjectType;
 
 #[derive(RustcEncodable)]
+pub struct WorldSizeResponse {
+    pub width: f64,
+    pub height: f64,
+}
+
+#[derive(RustcEncodable)]
 pub struct SampleObjectResponse {
     pub name: String,
     pub x: f64,
