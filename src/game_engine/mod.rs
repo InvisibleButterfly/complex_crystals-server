@@ -26,6 +26,7 @@ pub struct SampleObject {
     pub radar: RadarModule,
     pub weapon: WeaponModule,
     pub cargo: CargoModule,
+    pub armor: ArmorModule,
 }
 
 pub struct GameEngine {
@@ -70,6 +71,7 @@ impl GameEngine {
                     radar: RadarModule::new(100.0, RadarTypes::Middle),
                     weapon: WeaponModule::new(WeaponType::Mining, 10.0),
                     cargo: CargoModule::new(CargoType::Mining, 100.0, 0.0),
+                    armor: ArmorModule::new(100.0, ArmorType::Light),
                 });
             }
             ObjectType::Battlecruiser => {
@@ -83,6 +85,7 @@ impl GameEngine {
                     radar: RadarModule::new(300.0, RadarTypes::Military),
                     weapon: WeaponModule::new(WeaponType::Laser, 30.0),
                     cargo: CargoModule::new(CargoType::Battery, 100.0, 100.0),
+                    armor: ArmorModule::new(300.0, ArmorType::Light),
                 });
             }
         }
@@ -108,7 +111,12 @@ impl GameEngine {
         }
     }
     pub fn game_loop(&mut self, elapsed: f64) {
-        for object in &self.objects {
+        for (i, object) in self.objects.clone().iter().enumerate() {
+            if !object.armor.check_health() {
+                self.objects.remove(i);
+                continue;
+            }
+
             let mut drv = &mut object.drive.clone();
             drv.update(&mut object.clone(), elapsed);
 

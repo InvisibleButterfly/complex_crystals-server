@@ -130,11 +130,15 @@ impl WeaponModule {
                         WeaponType::Mining => {
                             if !object.cargo.add_cargo(0.1) {
                                 self.active = false;
+                            } else {
+                                obj.armor.damage(WeaponType::Mining, 1.0);
                             }
                         }
                         WeaponType::Laser => {
                             if !object.cargo.remove_cargo(0.1) {
                                 self.active = false;
+                            } else {
+                                obj.armor.damage(WeaponType::Laser, 1.0);
                             }
                         }
                     }
@@ -173,5 +177,72 @@ impl CargoModule {
         }
         self.current_capacity -= size;
         true
+    }
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub enum ArmorType {
+    Asteroid,
+    Light,
+    Middle,
+    Heavy,
+    Building,
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub struct ArmorModule {
+    pub health: f64,
+    pub atype: ArmorType,
+}
+
+impl ArmorModule {
+    pub fn new(health: f64, atype: ArmorType) -> Self {
+        ArmorModule {
+            health: health,
+            atype: atype,
+        }
+    }
+
+    pub fn check_health(&self) -> bool {
+        if self.health <= 0.0 {
+            false
+        } else {
+            true
+        }
+    }
+
+    pub fn damage(&mut self, wtype: WeaponType, dmg: f64) {
+        match self.atype {
+            ArmorType::Asteroid => {
+                match wtype {
+                    WeaponType::Mining => self.health -= dmg,
+                    WeaponType::Laser => self.health -= dmg,
+                }
+            }
+            ArmorType::Building => {
+                match wtype {
+                    WeaponType::Mining => self.health -= dmg * 0.0,
+                    WeaponType::Laser => self.health -= dmg * 0.001,
+                }
+            }
+            ArmorType::Heavy => {
+                match wtype {
+                    WeaponType::Mining => self.health -= dmg * 0.0,
+                    WeaponType::Laser => self.health -= dmg * 0.01,
+                }
+            }
+            ArmorType::Middle => {
+                match wtype {
+                    WeaponType::Mining => self.health -= dmg * 0.0,
+                    WeaponType::Laser => self.health -= dmg * 0.1,
+                }
+            }
+            ArmorType::Light => {
+                match wtype {
+                    WeaponType::Mining => self.health -= dmg * 0.001,
+                    WeaponType::Laser => self.health -= dmg * 1.0,
+                }
+            }
+        }
     }
 }
