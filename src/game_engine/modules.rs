@@ -8,6 +8,14 @@ pub struct DriveModule {
 }
 
 impl DriveModule {
+    pub fn new(speed: f64, dest_x: f64, dest_y: f64) -> Self {
+        DriveModule {
+            speed: speed,
+            dest_x: dest_x,
+            dest_y: dest_y,
+        }
+    }
+
     pub fn set_dest(&mut self, x: f64, y: f64) {
         self.dest_x = x;
         self.dest_y = y;
@@ -45,6 +53,13 @@ pub struct RadarModule {
 }
 
 impl RadarModule {
+    pub fn new(radius: f64, rtype: RadarTypes) -> Self {
+        RadarModule {
+            radius: radius,
+            rtype: rtype,
+        }
+    }
+
     pub fn get_nearby_objects(&self,
                               obj_x: f64,
                               obj_y: f64,
@@ -85,14 +100,17 @@ pub struct WeaponModule {
     pub target_y: f64,
 }
 
-#[derive(RustcDecodable, RustcEncodable, Clone)]
-pub struct CargoModule {
-    pub ctype: CargoType,
-    pub max_capacity: f64,
-    pub current_capacity: f64,
-}
-
 impl WeaponModule {
+    pub fn new(wtype: WeaponType, radius: f64) -> Self {
+        WeaponModule {
+            active: false,
+            wtype: wtype,
+            radius: radius,
+            target_x: 0.0,
+            target_y: 0.0,
+        }
+    }
+
     pub fn fire(&mut self, x: f64, y: f64) {
         self.target_x = x;
         self.target_y = y;
@@ -126,7 +144,22 @@ impl WeaponModule {
     }
 }
 
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub struct CargoModule {
+    pub ctype: CargoType,
+    pub max_capacity: f64,
+    pub current_capacity: f64,
+}
+
 impl CargoModule {
+    pub fn new(ctype: CargoType, max_capacity: f64, current_capacity: f64) -> Self {
+        CargoModule {
+            ctype: ctype,
+            max_capacity: max_capacity,
+            current_capacity: current_capacity,
+        }
+    }
+
     pub fn add_cargo(&mut self, size: f64) -> bool {
         if self.current_capacity + size > self.max_capacity {
             return false;

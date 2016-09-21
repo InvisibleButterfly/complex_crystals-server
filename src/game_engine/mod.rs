@@ -66,27 +66,10 @@ impl GameEngine {
                     otype: ObjectType::Harvester,
                     x: coord_x,
                     y: coord_y,
-                    drive: DriveModule {
-                        speed: 0.001,
-                        dest_x: coord_x,
-                        dest_y: coord_y,
-                    },
-                    radar: RadarModule {
-                        radius: 100.0,
-                        rtype: RadarTypes::Middle,
-                    },
-                    weapon: WeaponModule {
-                        active: false,
-                        wtype: WeaponType::Mining,
-                        radius: 10.0,
-                        target_x: coord_x,
-                        target_y: coord_y,
-                    },
-                    cargo: CargoModule {
-                        ctype: CargoType::Mining,
-                        max_capacity: 100.0,
-                        current_capacity: 0.0,
-                    },
+                    drive: DriveModule::new(0.001, coord_x, coord_y),
+                    radar: RadarModule::new(100.0, RadarTypes::Middle),
+                    weapon: WeaponModule::new(WeaponType::Mining, 10.0),
+                    cargo: CargoModule::new(CargoType::Mining, 100.0, 0.0),
                 });
             }
             ObjectType::Battlecruiser => {
@@ -96,27 +79,10 @@ impl GameEngine {
                     otype: ObjectType::Battlecruiser,
                     x: coord_x,
                     y: coord_y,
-                    drive: DriveModule {
-                        speed: 0.002,
-                        dest_x: coord_x,
-                        dest_y: coord_y,
-                    },
-                    radar: RadarModule {
-                        radius: 300.0,
-                        rtype: RadarTypes::Military,
-                    },
-                    weapon: WeaponModule {
-                        active: false,
-                        wtype: WeaponType::Laser,
-                        radius: 30.0,
-                        target_x: coord_x,
-                        target_y: coord_y,
-                    },
-                    cargo: CargoModule {
-                        ctype: CargoType::Battery,
-                        max_capacity: 100.0,
-                        current_capacity: 100.0,
-                    },
+                    drive: DriveModule::new(0.002, coord_x, coord_y),
+                    radar: RadarModule::new(300.0, RadarTypes::Military),
+                    weapon: WeaponModule::new(WeaponType::Laser, 30.0),
+                    cargo: CargoModule::new(CargoType::Battery, 100.0, 100.0),
                 });
             }
         }
