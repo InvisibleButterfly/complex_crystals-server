@@ -131,3 +131,41 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
 
     None
 }
+
+pub fn weapon_fire(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> bool {
+    let engine = mutex.lock().unwrap();
+    match json::decode(&request) {
+        Err(e) => {
+            println!("Json parsing error: {:?}", e);
+            return false;
+        }
+        Ok(data) => {
+            let wfr: WeaponFireRequest = data;
+            for obj in &engine.objects {
+                if obj.name == wfr.name && obj.owner == owner {
+                    obj.clone().weapon.fire(wfr.x, wfr.y);
+                }
+            }
+        }
+    }
+    true
+}
+
+pub fn weapon_stop(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> bool {
+    let engine = mutex.lock().unwrap();
+    match json::decode(&request) {
+        Err(e) => {
+            println!("Json parsing error: {:?}", e);
+            return false;
+        }
+        Ok(data) => {
+            let name: NameResponse = data;
+            for obj in &engine.objects {
+                if obj.name == name.name && obj.owner == owner {
+                    obj.clone().weapon.stop();
+                }
+            }
+        }
+    }
+    true
+}

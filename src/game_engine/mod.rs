@@ -24,6 +24,8 @@ pub struct SampleObject {
     pub y: f64,
     pub drive: DriveModule,
     pub radar: RadarModule,
+    pub weapon: WeaponModule,
+    pub cargo: CargoModule,
 }
 
 pub struct GameEngine {
@@ -73,6 +75,18 @@ impl GameEngine {
                         radius: 100.0,
                         rtype: RadarTypes::Middle,
                     },
+                    weapon: WeaponModule {
+                        active: false,
+                        wtype: WeaponType::Mining,
+                        radius: 10.0,
+                        target_x: coord_x,
+                        target_y: coord_y,
+                    },
+                    cargo: CargoModule {
+                        ctype: CargoType::Mining,
+                        max_capacity: 100.0,
+                        current_capacity: 0.0,
+                    },
                 });
             }
             ObjectType::Battlecruiser => {
@@ -90,6 +104,18 @@ impl GameEngine {
                     radar: RadarModule {
                         radius: 300.0,
                         rtype: RadarTypes::Military,
+                    },
+                    weapon: WeaponModule {
+                        active: false,
+                        wtype: WeaponType::Laser,
+                        radius: 30.0,
+                        target_x: coord_x,
+                        target_y: coord_y,
+                    },
+                    cargo: CargoModule {
+                        ctype: CargoType::Battery,
+                        max_capacity: 100.0,
+                        current_capacity: 100.0,
                     },
                 });
             }
@@ -116,9 +142,11 @@ impl GameEngine {
         }
     }
     pub fn game_loop(&mut self, elapsed: f64) {
-        for mut object in &mut self.objects {
+        for object in &self.objects {
             let mut drv = &mut object.drive.clone();
-            drv.update(&mut object, elapsed);
+            drv.update(&mut object.clone(), elapsed);
+
+            object.clone().weapon.update(&mut object.clone(), &mut self.objects.clone());
         }
     }
 }

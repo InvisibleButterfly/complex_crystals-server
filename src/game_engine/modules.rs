@@ -63,3 +63,82 @@ impl RadarModule {
 fn distance(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     ((x1 - x2).powi(2) + (y1 - y2).powi(2)).sqrt()
 }
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub enum WeaponType {
+    Mining,
+    Laser,
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub enum CargoType {
+    Mining,
+    Battery,
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub struct WeaponModule {
+    pub active: bool,
+    pub wtype: WeaponType,
+    pub radius: f64,
+    pub target_x: f64,
+    pub target_y: f64,
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone)]
+pub struct CargoModule {
+    pub ctype: CargoType,
+    pub max_capacity: f64,
+    pub current_capacity: f64,
+}
+
+impl WeaponModule {
+    pub fn fire(&mut self, x: f64, y: f64) {
+        self.target_x = x;
+        self.target_y = y;
+        self.active = true;
+    }
+
+    pub fn stop(&mut self) {
+        self.active = false;
+    }
+
+    pub fn update(&mut self, object: &mut SampleObject, objects: &mut Vec<SampleObject>) {
+        if self.active == true &&
+           distance(object.x, object.y, self.target_x, self.target_y) <= self.radius {
+            for obj in objects {
+                if obj.x == self.target_x && obj.y == self.target_y {
+                    match self.wtype {
+                        WeaponType::Mining => {
+                            if !object.cargo.add_cargo(0.1) {
+                                self.active = false;
+                            }
+                        }
+                        WeaponType::Laser => {
+                            if !object.cargo.remove_cargo(0.1) {
+                                self.active = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+impl CargoModule {
+    pub fn add_cargo(&mut self, size: f64) -> bool {
+        if self.current_capacity + size > self.max_capacity {
+            return false;
+        }
+        self.current_capacity += size;
+        true
+    }
+    pub fn remove_cargo(&mut self, size: f64) -> bool {
+        if self.current_capacity + size < 0.0 {
+            return false;
+        }
+        self.current_capacity -= size;
+        true
+    }
+}

@@ -48,3 +48,10 @@ pub struct MilitaryRadarRequest {
     pub otype: ObjectType,
     pub speed: f64,
 }
+
+#[derive(RustcDecodable)]
+pub struct WeaponFireRequest {
+    pub name: String,
+    pub x: f64,
+    pub y: f64,
+}
