@@ -1,4 +1,5 @@
 use ::game_engine::ObjectType;
+use ::game_engine::modules::ArmorModule;
 
 #[derive(RustcEncodable)]
 pub struct WorldSizeResponse {
@@ -12,6 +13,7 @@ pub struct SampleObjectResponse {
     pub x: f64,
     pub y: f64,
     pub otype: ObjectType,
+    pub armor: ArmorModule,
 }
 
 #[derive(RustcDecodable, RustcEncodable)]

@@ -111,16 +111,16 @@ impl GameEngine {
         }
     }
     pub fn game_loop(&mut self, elapsed: f64) {
-        for (i, object) in self.objects.clone().iter().enumerate() {
-            if !object.armor.check_health() {
-                self.objects.remove(i);
-                continue;
-            }
+        for mut object in &mut self.objects {
+            // .iter().enumerate() {
+            // if !object.armor.check_health() {
+            //    self.objects.remove(i);
+            //    continue;
+            // }
 
-            let mut drv = &mut object.drive.clone();
-            drv.update(&mut object.clone(), elapsed);
+            object.clone().drive.update(&mut object, elapsed);
 
-            object.clone().weapon.update(&mut object.clone(), &mut self.objects.clone());
+            // object.clone().weapon.update(&mut object, &mut self.objects);
         }
     }
 }

@@ -23,6 +23,7 @@ pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
             x: obj.x,
             y: obj.y,
             otype: obj.otype,
+            armor: obj.armor,
         });
     }
     Some(json::encode(&objects).unwrap())
