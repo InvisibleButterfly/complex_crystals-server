@@ -15,7 +15,33 @@ pub fn world_size(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
 
 pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     let engine = mutex.lock().unwrap();
-    Some(json::encode(&engine.objects).unwrap())
+    let mut objects = vec![];
+    for obj in &engine.objects {
+        let obj = obj.read().unwrap().clone();
+        objects.push(SampleObject {
+            owner: obj.owner,
+            name: obj.name,
+            otype: obj.otype,
+            x: obj.x,
+            y: obj.y,
+            drive_speed: obj.drive_speed,
+            drive_dest_x: obj.drive_dest_x,
+            drive_dest_y: obj.drive_dest_y,
+            radar_radius: obj.radar_radius,
+            radar_type: obj.radar_type,
+            weapon_active: obj.weapon_active,
+            weapon_type: obj.weapon_type,
+            weapon_radius: obj.weapon_radius,
+            weapon_target_x: obj.weapon_target_x,
+            weapon_target_y: obj.weapon_target_y,
+            cargo_type: obj.cargo_type,
+            cargo_max: obj.cargo_max,
+            cargo_current: obj.cargo_current,
+            shell_health: obj.shell_health,
+            shell_type: obj.shell_type,
+        });
+    }
+    Some(json::encode(&objects).unwrap())
 }
 
 pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String) -> bool {
@@ -27,10 +53,11 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
         }
         Ok(data) => {
             let mut mvr: MoveObjectRequest = data;
-            let mut object = match engine.get_object(mvr.name) {
-                Some(expr) => expr.clone(),
+            let object = match engine.get_object(mvr.name) {
+                Some(expr) => expr,
                 None => return false,
             };
+            let mut object = object.write().unwrap();
 
             if object.owner != owner {
                 return false;
@@ -63,11 +90,8 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
         }
         Ok(data) => {
             let name: NameResponse = data;
-
-            let object = match engine.get_object(name.name) {
-                Some(expr) => expr.clone(),
-                None => return None,
-            };
+            let option_object = engine.get_object(name.name).unwrap();
+            let object = option_object.read().unwrap();
 
             if object.owner != owner {
                 return None;
@@ -82,6 +106,7 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
                 RadarType::Simple => {
                     let mut result = Vec::new();
                     for obj in objects {
+                        let obj = obj.read().unwrap();
                         result.push(SimpleRadarRequest {
                             x: obj.x,
                             y: obj.y,
@@ -92,6 +117,7 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
                 RadarType::Middle => {
                     let mut result = Vec::new();
                     for obj in objects {
+                        let obj = obj.read().unwrap().clone();
                         result.push(MiddleRadarRequest {
                             x: obj.x,
                             y: obj.y,
@@ -104,6 +130,7 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
                 RadarType::Military => {
                     let mut result = Vec::new();
                     for obj in objects {
+                        let obj = obj.read().unwrap();
                         result.push(MilitaryRadarRequest {
                             x: obj.x,
                             y: obj.y,
@@ -130,7 +157,8 @@ pub fn weapon_fire(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: Strin
         }
         Ok(data) => {
             let wfr: WeaponFireRequest = data;
-            for obj in engine.objects {
+            for obj in &engine.objects {
+                let mut obj = obj.write().unwrap();
                 if obj.name == wfr.name && obj.owner == owner {
                     obj.weapon_fire(wfr.x, wfr.y);
                 }
@@ -149,7 +177,8 @@ pub fn weapon_stop(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: Strin
         }
         Ok(data) => {
             let name: NameResponse = data;
-            for obj in engine.objects {
+            for obj in &engine.objects {
+                let mut obj = obj.write().unwrap();
                 if obj.name == name.name && obj.owner == owner {
                     obj.weapon_stop();
                 }

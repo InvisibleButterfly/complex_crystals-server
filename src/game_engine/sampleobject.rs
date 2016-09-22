@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub enum ObjectType {
     Harvester,
@@ -120,11 +122,14 @@ impl SampleObject {
         self.drive_dest_y = y;
     }
 
-    pub fn radar_scan(&self, objects: &Vec<SampleObject>) -> Option<Vec<Box<SampleObject>>> {
+    pub fn radar_scan(&self,
+                      objects: &Vec<Arc<RwLock<SampleObject>>>)
+                      -> Option<Vec<Arc<RwLock<SampleObject>>>> {
         let mut result = vec![];
-        for object in objects.clone() {
-            if distance(self.x, self.y, object.x, object.y) <= self.radar_radius {
-                result.push(Box::new(object));
+        for object in objects {
+            let obj = object.read().unwrap();
+            if distance(self.x, self.y, obj.x, obj.y) <= self.radar_radius {
+                result.push(object.clone());
             }
         }
         Some(result)
@@ -216,11 +221,12 @@ impl SampleObject {
         }
     }
 
-    fn weapon_update(&mut self, objects: &mut Vec<SampleObject>) {
+    fn weapon_update(&mut self, objects: &mut Vec<Arc<RwLock<SampleObject>>>) {
         if self.weapon_active == true &&
            distance(self.x, self.y, self.weapon_target_x, self.weapon_target_y) <=
            self.weapon_radius {
             for obj in objects {
+                let mut obj = obj.write().unwrap();
                 if obj.x == self.weapon_target_x && obj.y == self.weapon_target_y {
                     match self.weapon_type {
                         WeaponType::Mining => {
@@ -243,7 +249,7 @@ impl SampleObject {
         }
     }
 
-    pub fn update(&mut self, objects: &mut Vec<SampleObject>, elapsed: f64) {
+    pub fn update(&mut self, objects: &mut Vec<Arc<RwLock<SampleObject>>>, elapsed: f64) {
         self.engine_update(elapsed);
         self.weapon_update(objects);
     }

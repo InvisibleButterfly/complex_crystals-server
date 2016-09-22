@@ -1,6 +1,7 @@
 pub mod sampleobject;
 
 use self::sampleobject::*;
+use std::sync::{Arc, RwLock};
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ServerInfo {
@@ -11,7 +12,7 @@ pub struct ServerInfo {
 
 pub struct GameEngine {
     pub info: ServerInfo,
-    pub objects: Vec<SampleObject>,
+    pub objects: Vec<Arc<RwLock<SampleObject>>>,
     pub world_size_x: f64,
     pub world_size_y: f64,
 }
@@ -39,13 +40,17 @@ impl GameEngine {
                       coord_y: f64,
                       otype: ObjectType,
                       owner: String) {
-        self.objects.push(SampleObject::new(owner, object_name, otype, coord_x, coord_y));
+        self.objects.push(Arc::new(RwLock::new(SampleObject::new(owner,
+                                                                 object_name,
+                                                                 otype,
+                                                                 coord_x,
+                                                                 coord_y))));
     }
 
-    pub fn get_object(&self, name: String) -> Option<&mut SampleObject> {
-        for object in self.objects.clone() {
-            if object.name == name {
-                return Some(&mut object);
+    pub fn get_object(&self, name: String) -> Option<Arc<RwLock<SampleObject>>> {
+        for object in &self.objects {
+            if object.read().unwrap().name == name {
+                return Some(object.clone());
             }
         }
         None
@@ -53,22 +58,20 @@ impl GameEngine {
 
     pub fn set_object_dest(&mut self, object_name: String, x: f64, y: f64, owner: String) {
         match self.get_object(object_name) {
-            Some(data) => data.drive_move_to(x, y),
+            Some(data) => data.write().unwrap().drive_move_to(x, y),
             None => {}
         }
     }
 
     pub fn game_loop(&mut self, elapsed: f64) {
-        for mut object in &mut self.objects.clone() {
+        for object in &self.objects {
             // .iter().enumerate() {
             // if !object.armor.check_health() {
             //    self.objects.remove(i);
             //    continue;
             // }
 
-            object.update(&mut self.objects.clone(), elapsed);
-
-            // object.clone().weapon.update(&mut object, &mut self.objects);
+            object.write().unwrap().update(&mut self.objects.clone(), elapsed);
         }
     }
 }
