@@ -161,14 +161,6 @@ impl SampleObject {
         true
     }
 
-    pub fn shell_check_health(&self) -> bool {
-        if self.shell_health <= 0.0 {
-            false
-        } else {
-            true
-        }
-    }
-
     pub fn shell_damage(&mut self, wtype: WeaponType, dmg: f64) {
         match self.shell_type {
             ArmorType::Asteroid => {
@@ -249,7 +241,19 @@ impl SampleObject {
         }
     }
 
+    pub fn shell_update(&self, objects: &mut Vec<Arc<RwLock<SampleObject>>>) {
+        if self.shell_health <= 0.0 {
+            for (i, obj) in objects.clone().iter().enumerate() {
+                if obj.read().unwrap().name == self.name {
+                    objects.remove(i);
+                    return;
+                }
+            }
+        }
+    }
+
     pub fn update(&mut self, objects: &mut Vec<Arc<RwLock<SampleObject>>>, elapsed: f64) {
+        self.shell_update(objects);
         self.engine_update(elapsed);
         self.weapon_update(objects);
     }

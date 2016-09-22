@@ -58,19 +58,18 @@ impl GameEngine {
 
     pub fn set_object_dest(&mut self, object_name: String, x: f64, y: f64, owner: String) {
         match self.get_object(object_name) {
-            Some(data) => data.write().unwrap().drive_move_to(x, y),
+            Some(data) => {
+                let mut object = data.write().unwrap();
+                if object.owner == owner {
+                    object.drive_move_to(x, y)
+                }
+            }
             None => {}
         }
     }
 
     pub fn game_loop(&mut self, elapsed: f64) {
         for object in &self.objects {
-            // .iter().enumerate() {
-            // if !object.armor.check_health() {
-            //    self.objects.remove(i);
-            //    continue;
-            // }
-
             object.write().unwrap().update(&mut self.objects.clone(), elapsed);
         }
     }
