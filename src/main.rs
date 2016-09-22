@@ -6,10 +6,10 @@ mod game_engine;
 mod network_engine;
 
 use game_engine::GameEngine;
+use game_engine::sampleobject::ObjectType;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use game_engine::ObjectType;
 const FLOAT_ERR: f64 = std::f64::EPSILON;
 
 fn main() {

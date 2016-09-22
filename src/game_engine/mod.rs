@@ -1,32 +1,12 @@
-pub mod modules;
+pub mod sampleobject;
 
-use self::modules::*;
+use self::sampleobject::*;
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ServerInfo {
     name: String,
     status: String,
     tps: u16,
-}
-
-#[derive(RustcDecodable, RustcEncodable, Clone)]
-pub enum ObjectType {
-    Harvester,
-    Battlecruiser,
-}
-
-#[derive(RustcDecodable, RustcEncodable, Clone)]
-pub struct SampleObject {
-    pub owner: String,
-    pub name: String,
-    pub otype: ObjectType,
-    pub x: f64,
-    pub y: f64,
-    pub drive: DriveModule,
-    pub radar: RadarModule,
-    pub weapon: WeaponModule,
-    pub cargo: CargoModule,
-    pub armor: ArmorModule,
 }
 
 pub struct GameEngine {
@@ -59,66 +39,34 @@ impl GameEngine {
                       coord_y: f64,
                       otype: ObjectType,
                       owner: String) {
-        match otype {
-            ObjectType::Harvester => {
-                self.objects.push(SampleObject {
-                    owner: owner,
-                    name: object_name,
-                    otype: ObjectType::Harvester,
-                    x: coord_x,
-                    y: coord_y,
-                    drive: DriveModule::new(0.001, coord_x, coord_y),
-                    radar: RadarModule::new(100.0, RadarTypes::Middle),
-                    weapon: WeaponModule::new(WeaponType::Mining, 10.0),
-                    cargo: CargoModule::new(CargoType::Mining, 100.0, 0.0),
-                    armor: ArmorModule::new(100.0, ArmorType::Light),
-                });
-            }
-            ObjectType::Battlecruiser => {
-                self.objects.push(SampleObject {
-                    owner: owner,
-                    name: object_name,
-                    otype: ObjectType::Battlecruiser,
-                    x: coord_x,
-                    y: coord_y,
-                    drive: DriveModule::new(0.002, coord_x, coord_y),
-                    radar: RadarModule::new(300.0, RadarTypes::Military),
-                    weapon: WeaponModule::new(WeaponType::Laser, 30.0),
-                    cargo: CargoModule::new(CargoType::Battery, 100.0, 100.0),
-                    armor: ArmorModule::new(300.0, ArmorType::Light),
-                });
-            }
-        }
+        self.objects.push(SampleObject::new(owner, object_name, otype, coord_x, coord_y));
     }
 
-    pub fn get_object(&self, name: String) -> Option<Box<SampleObject>> {
+    pub fn get_object(&self, name: String) -> Option<&mut SampleObject> {
         for object in self.objects.clone() {
             if object.name == name {
-                return Some(Box::new(object));
+                return Some(&mut object);
             }
         }
         None
     }
 
     pub fn set_object_dest(&mut self, object_name: String, x: f64, y: f64, owner: String) {
-        for obj in &mut self.objects {
-            if obj.name == object_name {
-                if obj.owner == owner {
-                    obj.drive.set_dest(x, y);
-                }
-                break;
-            }
+        match self.get_object(object_name) {
+            Some(data) => data.drive_move_to(x, y),
+            None => {}
         }
     }
+
     pub fn game_loop(&mut self, elapsed: f64) {
-        for mut object in &mut self.objects {
+        for mut object in &mut self.objects.clone() {
             // .iter().enumerate() {
             // if !object.armor.check_health() {
             //    self.objects.remove(i);
             //    continue;
             // }
 
-            object.clone().drive.update(&mut object, elapsed);
+            object.update(&mut self.objects.clone(), elapsed);
 
             // object.clone().weapon.update(&mut object, &mut self.objects);
         }
