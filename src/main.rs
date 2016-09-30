@@ -15,6 +15,12 @@ const FLOAT_ERR: f64 = std::f64::EPSILON;
 fn main() {
     let mutex_engine = Arc::new(Mutex::new(GameEngine::new()));
 
+    mutex_engine.lock().unwrap().add_object("Asteroid".to_string(),
+                                            100.0,
+                                            200.0,
+                                            ObjectType::Asteroid,
+                                            "unknown".to_owned());
+
     mutex_engine.lock().unwrap().add_object("Object1".to_string(),
                                             10.0f64,
                                             20.0f64,
@@ -37,7 +43,7 @@ fn main() {
     mutex_engine.lock()
         .unwrap()
         .add_object("Object4".to_string(),
-                    200.0,
+                    110.0,
                     200.0,
                     ObjectType::Harvester,
                     "player".to_owned());

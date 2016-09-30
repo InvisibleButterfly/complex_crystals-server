@@ -103,6 +103,7 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
             };
 
             match object.radar_type {
+                RadarType::None => return None,
                 RadarType::Simple => {
                     let mut result = Vec::new();
                     for obj in objects {

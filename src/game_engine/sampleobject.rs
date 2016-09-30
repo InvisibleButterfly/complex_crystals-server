@@ -2,12 +2,14 @@ use std::sync::{Arc, RwLock};
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub enum ObjectType {
+    Asteroid,
     Harvester,
     Battlecruiser,
 }
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub enum RadarType {
+    None,
     Simple,
     Middle,
     Military,
@@ -15,12 +17,14 @@ pub enum RadarType {
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub enum WeaponType {
+    None,
     Mining,
     Laser,
 }
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub enum CargoType {
+    None,
     Mining,
     Battery,
 }
@@ -66,6 +70,30 @@ pub struct SampleObject {
 impl SampleObject {
     pub fn new(owner: String, name: String, otype: ObjectType, x: f64, y: f64) -> Self {
         match otype {
+            ObjectType::Asteroid => {
+                SampleObject {
+                    owner: owner,
+                    name: name,
+                    otype: otype,
+                    x: x,
+                    y: y,
+                    drive_speed: 0.0,
+                    drive_dest_x: x,
+                    drive_dest_y: y,
+                    radar_radius: 0.0,
+                    radar_type: RadarType::None,
+                    weapon_active: false,
+                    weapon_type: WeaponType::None,
+                    weapon_radius: 0.0,
+                    weapon_target_x: x,
+                    weapon_target_y: y,
+                    cargo_type: CargoType::None,
+                    cargo_max: 0.0,
+                    cargo_current: 0.0,
+                    shell_health: 1000.0,
+                    shell_type: ArmorType::Asteroid,
+                }
+            }
             ObjectType::Harvester => {
                 SampleObject {
                     owner: owner,
@@ -165,30 +193,35 @@ impl SampleObject {
         match self.shell_type {
             ArmorType::Asteroid => {
                 match wtype {
+                    WeaponType::None => {}
                     WeaponType::Mining => self.shell_health -= dmg,
                     WeaponType::Laser => self.shell_health -= dmg,
                 }
             }
             ArmorType::Building => {
                 match wtype {
+                    WeaponType::None => {}
                     WeaponType::Mining => self.shell_health -= dmg * 0.0,
                     WeaponType::Laser => self.shell_health -= dmg * 0.001,
                 }
             }
             ArmorType::Heavy => {
                 match wtype {
+                    WeaponType::None => {}
                     WeaponType::Mining => self.shell_health -= dmg * 0.0,
                     WeaponType::Laser => self.shell_health -= dmg * 0.01,
                 }
             }
             ArmorType::Middle => {
                 match wtype {
+                    WeaponType::None => {}
                     WeaponType::Mining => self.shell_health -= dmg * 0.0,
                     WeaponType::Laser => self.shell_health -= dmg * 0.1,
                 }
             }
             ArmorType::Light => {
                 match wtype {
+                    WeaponType::None => {}
                     WeaponType::Mining => self.shell_health -= dmg * 0.001,
                     WeaponType::Laser => self.shell_health -= dmg * 1.0,
                 }
@@ -213,7 +246,7 @@ impl SampleObject {
         }
     }
 
-    fn weapon_update(&mut self, objects: &mut Vec<Arc<RwLock<SampleObject>>>) {
+    pub fn weapon_update(&mut self, objects: &mut Vec<Arc<RwLock<SampleObject>>>) {
         if self.weapon_active == true &&
            distance(self.x, self.y, self.weapon_target_x, self.weapon_target_y) <=
            self.weapon_radius {
@@ -221,6 +254,7 @@ impl SampleObject {
                 let mut obj = obj.write().unwrap();
                 if obj.x == self.weapon_target_x && obj.y == self.weapon_target_y {
                     match self.weapon_type {
+                        WeaponType::None => {}
                         WeaponType::Mining => {
                             if !self.cargo_add(0.1) {
                                 self.weapon_active = false;
