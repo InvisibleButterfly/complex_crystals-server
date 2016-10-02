@@ -4,6 +4,7 @@ extern crate time;
 
 mod game_engine;
 mod network_engine;
+mod level_generator;
 
 use game_engine::GameEngine;
 use game_engine::sampleobject::ObjectType;
@@ -15,46 +16,10 @@ const FLOAT_ERR: f64 = std::f64::EPSILON;
 fn main() {
     let mutex_engine = Arc::new(Mutex::new(GameEngine::new()));
 
-    mutex_engine.lock().unwrap().add_object("Asteroid".to_string(),
-                                            100.0,
-                                            200.0,
-                                            ObjectType::Asteroid,
-                                            "unknown".to_owned());
-
-    mutex_engine.lock().unwrap().add_object("Object1".to_string(),
-                                            10.0f64,
-                                            20.0f64,
-                                            ObjectType::Harvester,
-                                            "unknown".to_owned());
-    mutex_engine.lock().unwrap().add_object("Object2".to_string(),
-                                            100.0f64,
-                                            10.0f64,
-                                            ObjectType::Harvester,
-                                            "player".to_owned());
+    level_generator::generate(mutex_engine.clone(), 1, 800.0, 600.0);
 
     let cloned_engine = mutex_engine.clone();
     thread::spawn(move || network_engine::start(cloned_engine));
-
-    mutex_engine.lock().unwrap().add_object("Object3".to_string(),
-                                            100.0f64,
-                                            10.0f64,
-                                            ObjectType::Harvester,
-                                            "player".to_owned());
-    mutex_engine.lock()
-        .unwrap()
-        .add_object("Object4".to_string(),
-                    110.0,
-                    200.0,
-                    ObjectType::Harvester,
-                    "player".to_owned());
-    mutex_engine.lock().unwrap().add_object("Battlecruiser".to_string(),
-                                            500.0,
-                                            300.0,
-                                            ObjectType::Battlecruiser,
-                                            "player".to_owned());
-    mutex_engine.lock()
-        .unwrap()
-        .set_object_dest("Battlecruiser".to_string(), 0.0, 0.0, "player".to_owned());
 
     let interval = 1_000_000_000 / 60;
     let mut before = time::precise_time_ns();
