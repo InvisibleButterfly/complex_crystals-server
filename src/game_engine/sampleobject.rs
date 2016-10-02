@@ -245,54 +245,8 @@ impl SampleObject {
             }
         }
     }
-
-    pub fn weapon_update(&mut self, objects: &mut Vec<Arc<RwLock<SampleObject>>>) {
-        if self.weapon_active == true &&
-           distance(self.x, self.y, self.weapon_target_x, self.weapon_target_y) <=
-           self.weapon_radius {
-            for obj in objects {
-                let mut obj = obj.write().unwrap();
-                if obj.x == self.weapon_target_x && obj.y == self.weapon_target_y {
-                    match self.weapon_type {
-                        WeaponType::None => {}
-                        WeaponType::Mining => {
-                            if !self.cargo_add(0.1) {
-                                self.weapon_active = false;
-                            } else {
-                                obj.shell_damage(WeaponType::Mining, 1.0);
-                            }
-                        }
-                        WeaponType::Laser => {
-                            if !self.cargo_remove(0.1) {
-                                self.weapon_active = false;
-                            } else {
-                                obj.shell_damage(WeaponType::Laser, 1.0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn shell_update(&self, objects: &mut Vec<Arc<RwLock<SampleObject>>>) {
-        if self.shell_health <= 0.0 {
-            for (i, obj) in objects.clone().iter().enumerate() {
-                if obj.read().unwrap().name == self.name {
-                    objects.remove(i);
-                    return;
-                }
-            }
-        }
-    }
-
-    pub fn update(&mut self, objects: &mut Vec<Arc<RwLock<SampleObject>>>, elapsed: f64) {
-        self.shell_update(objects);
-        self.engine_update(elapsed);
-        self.weapon_update(objects);
-    }
 }
 
-fn distance(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
+pub fn distance(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     ((x1 - x2).powi(2) + (y1 - y2).powi(2)).sqrt()
 }
