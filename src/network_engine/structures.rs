@@ -47,3 +47,10 @@ pub struct WeaponFireRequest {
     pub x: f64,
     pub y: f64,
 }
+
+#[derive(RustcDecodable)]
+pub struct BuildRequest {
+    pub name: String,
+    pub oname: String,
+    pub otype: ObjectType,
+}

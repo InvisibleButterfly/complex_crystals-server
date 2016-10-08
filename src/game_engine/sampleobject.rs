@@ -1,10 +1,11 @@
 use std::sync::{Arc, RwLock};
 
-#[derive(RustcDecodable, RustcEncodable, Clone)]
+#[derive(RustcDecodable, RustcEncodable, Clone, PartialEq)]
 pub enum ObjectType {
     Asteroid,
-    Harvester,
+    Builder,
     Battlecruiser,
+    Harvester,
 }
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
@@ -140,6 +141,30 @@ impl SampleObject {
                     cargo_current: 100.0,
                     shell_health: 300.0,
                     shell_type: ArmorType::Light,
+                }
+            }
+            ObjectType::Builder => {
+                SampleObject {
+                    owner: owner,
+                    name: name,
+                    otype: otype,
+                    x: x,
+                    y: y,
+                    drive_speed: 0.000,
+                    drive_dest_x: x,
+                    drive_dest_y: y,
+                    radar_radius: 100.0,
+                    radar_type: RadarType::Simple,
+                    weapon_active: false,
+                    weapon_type: WeaponType::None,
+                    weapon_radius: 0.0,
+                    weapon_target_x: x,
+                    weapon_target_y: y,
+                    cargo_type: CargoType::Mining,
+                    cargo_max: 10000.0,
+                    cargo_current: 0.0,
+                    shell_health: 2000.0,
+                    shell_type: ArmorType::Building,
                 }
             }
         }

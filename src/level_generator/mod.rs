@@ -17,7 +17,7 @@ pub fn generate(mutex: Arc<Mutex<GameEngine>>,
         for x in 0..NOISE_SIZE {
             let level = asteroid_noise[x][y];
             print!(" {} ", level);
-            if level > 5.5 {
+            if level > 8.0 {
                 engine.add_object("Asteroid".to_string(),
                                   x as f64 * 100.0,
                                   y as f64 * 100.0,
@@ -28,36 +28,13 @@ pub fn generate(mutex: Arc<Mutex<GameEngine>>,
     }
     println!("Завершена");
 
-    engine.add_object("Asteroid".to_string(),
-                      100.0,
-                      200.0,
-                      ObjectType::Asteroid,
-                      "unknown".to_owned());
-    engine.add_object("Object1".to_string(),
-                      10.0,
-                      20.0,
-                      ObjectType::Harvester,
-                      "unknown".to_owned());
-    engine.add_object("Object2".to_string(),
-                      100.0,
-                      10.0,
-                      ObjectType::Harvester,
-                      "player".to_owned());
-
-    engine.add_object("Object3".to_string(),
-                      100.0f64,
-                      10.0f64,
-                      ObjectType::Harvester,
-                      "player".to_owned());
-    engine.add_object("Object4".to_string(),
-                      110.0,
-                      200.0,
-                      ObjectType::Harvester,
-                      "player".to_owned());
-    engine.add_object("Battlecruiser".to_string(),
-                      500.0,
-                      300.0,
-                      ObjectType::Battlecruiser,
-                      "player".to_owned());
-    engine.set_object_dest("Battlecruiser".to_string(), 0.0, 0.0, "player".to_owned());
+    for (i, player) in players.iter().enumerate() {
+        let mut basename = player.clone();
+        basename.push_str("Base");
+        engine.add_object(basename.to_owned(),
+                          100.0,
+                          100.0 * i as f64,
+                          ObjectType::Builder,
+                          player.clone());
+    }
 }

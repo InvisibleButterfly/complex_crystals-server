@@ -114,6 +114,18 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
         }
     });
 
+    let cloned_engine = mutex.clone();
+    router.add_route("build".to_owned(), move |req: &mut Request| {
+        let mut buf = String::new();
+        req.body.read_to_string(&mut buf).unwrap();
+
+        if requests::build(&cloned_engine, buf, get_username(&req)) {
+            Ok(Response::with((status::Ok)))
+        } else {
+            Ok(Response::with((status::Ok)))
+        }
+    });
+
     Iron::new(router).http("localhost:3000").unwrap();
 }
 

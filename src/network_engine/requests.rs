@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 use ::game_engine::GameEngine;
 use ::rustc_serialize::json;
 use ::network_engine::structures::*;
-use ::game_engine::sampleobject::{SampleObject, RadarType};
+use ::game_engine::sampleobject::{SampleObject, RadarType, ObjectType};
 
 pub fn world_size(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     let engine = mutex.lock().unwrap();
@@ -183,6 +183,42 @@ pub fn weapon_stop(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: Strin
                 if obj.name == name.name && obj.owner == owner {
                     obj.weapon_stop();
                 }
+            }
+        }
+    }
+    true
+}
+
+pub fn build(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> bool {
+    let mut engine = mutex.lock().unwrap();
+    match json::decode(&request) {
+        Err(e) => {
+            println!("Json parsing error: {:?}", e);
+            return false;
+        }
+        Ok(data) => {
+            let req: BuildRequest = data;
+
+            let mut flag = false;
+            let mut obj_x = 0.0;
+            let mut obj_y = 0.0;
+
+            for obj in &engine.objects {
+                let obj = obj.read().unwrap();
+                if obj.name == req.name && obj.owner == owner.clone() &&
+                   obj.otype == ObjectType::Builder {
+                    obj_x = obj.x;
+                    obj_y = obj.y;
+                    flag = true;
+                    break;
+                }
+            }
+            if flag {
+                engine.add_object(req.oname.clone(),
+                                  obj_x,
+                                  obj_y,
+                                  req.otype.clone(),
+                                  owner.clone());
             }
         }
     }
