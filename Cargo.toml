@@ -7,3 +7,5 @@ authors = ["97nomad <97nomad@gmail.com>"]
 iron = "*"
 rustc-serialize = "*"
 time = "*"
+getopts = "*"
+rand = "*"
