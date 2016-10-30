@@ -32,9 +32,9 @@ fn main() {
     let width = matches.opt_str("w").unwrap().parse::<f64>().unwrap();
     let height = matches.opt_str("h").unwrap().parse::<f64>().unwrap();
     let players = matches.opt_strs("p");
-    println!("Width: {}", width);
-    println!("Height: {}", height);
-    println!("Players: {:?}", players);
+    println!("Ширина: {}", width);
+    println!("Высота: {}", height);
+    println!("Игроки: {:?}", players);
 
     let mutex_engine = Arc::new(Mutex::new(GameEngine::new()));
 

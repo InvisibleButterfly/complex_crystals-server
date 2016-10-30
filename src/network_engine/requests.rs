@@ -71,6 +71,10 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
             }
 
             object.drive_move_to(mvr.x, mvr.y);
+            print!("Передвижение объекта {} -- ",
+                   object.name);
+            print!("x: {} ", mvr.x);
+            println!("y: {} ", mvr.y);
         }
     }
     true
@@ -162,6 +166,9 @@ pub fn weapon_fire(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: Strin
                 let mut obj = obj.write().unwrap();
                 if obj.name == wfr.name && obj.owner == owner {
                     obj.weapon_fire(wfr.x, wfr.y);
+                    print!("Огонь объекта {} -- ", obj.name);
+                    print!("x: {} ", wfr.x);
+                    println!("y: {} ", wfr.y);
                 }
             }
         }

@@ -16,7 +16,6 @@ pub fn generate(mutex: Arc<Mutex<GameEngine>>,
     for y in 0..NOISE_SIZE {
         for x in 0..NOISE_SIZE {
             let level = asteroid_noise[x][y];
-            print!(" {} ", level);
             if level > 8.0 {
                 engine.add_object("Asteroid".to_string(),
                                   x as f64 * 100.0,
