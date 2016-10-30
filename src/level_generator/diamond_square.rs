@@ -67,7 +67,7 @@ fn step_square(x: usize, y: usize, size: usize, array: &mut Vec<Vec<f64>>) {
     let d = array[x + size][y + size];
     let e = array[x + (size / 2)][y + (size / 2)];
 
-    array[x + (size / 2)][y + (size / 2)] += (a + b + c + d + e) / 5.0;
+    array[x + (size / 2)][y + (size / 2)] = (a + b + c + d + e) / 5.0;
 }
 
 fn step_diamond(x: isize, y: isize, size: usize, array: &mut Vec<Vec<f64>>) {
@@ -84,7 +84,7 @@ fn step_diamond(x: isize, y: isize, size: usize, array: &mut Vec<Vec<f64>>) {
     let d = get_element(x + hs as isize, y + size as isize, &array);
     let e = get_element(x + hs as isize, y + hs as isize, &array);
 
-    array[(x + hs as isize) as usize][(y + hs as isize) as usize] += (a + b + c + d + e) / 5.0;
+    array[(x + hs as isize) as usize][(y + hs as isize) as usize] = (a + b + c + d + e) / 5.0;
 }
 
 fn get_element(x: isize, y: isize, array: &Vec<Vec<f64>>) -> f64 {
