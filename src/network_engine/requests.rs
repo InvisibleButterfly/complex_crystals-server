@@ -15,32 +15,36 @@ pub fn world_size(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
 
 pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     let engine = mutex.lock().unwrap();
-    let mut objects = vec![];
-    for obj in &engine.objects {
-        let obj = obj.read().unwrap().clone();
-        objects.push(SampleObject {
-            owner: obj.owner,
-            name: obj.name,
-            otype: obj.otype,
-            x: obj.x,
-            y: obj.y,
-            drive_speed: obj.drive_speed,
-            drive_dest_x: obj.drive_dest_x,
-            drive_dest_y: obj.drive_dest_y,
-            radar_radius: obj.radar_radius,
-            radar_type: obj.radar_type,
-            weapon_active: obj.weapon_active,
-            weapon_type: obj.weapon_type,
-            weapon_radius: obj.weapon_radius,
-            weapon_target_x: obj.weapon_target_x,
-            weapon_target_y: obj.weapon_target_y,
-            cargo_type: obj.cargo_type,
-            cargo_max: obj.cargo_max,
-            cargo_current: obj.cargo_current,
-            shell_health: obj.shell_health,
-            shell_type: obj.shell_type,
-        });
-    }
+    let mut objects: Vec<SampleObject> = engine.objects
+        .clone()
+        .iter()
+        .map(|x| {
+            let (k, v) = x;
+            let obj = v.read().unwrap().clone();
+            SampleObject {
+                owner: obj.owner,
+                name: obj.name,
+                otype: obj.otype,
+                x: obj.x,
+                y: obj.y,
+                drive_speed: obj.drive_speed,
+                drive_dest_x: obj.drive_dest_x,
+                drive_dest_y: obj.drive_dest_y,
+                radar_radius: obj.radar_radius,
+                radar_type: obj.radar_type,
+                weapon_active: obj.weapon_active,
+                weapon_type: obj.weapon_type,
+                weapon_radius: obj.weapon_radius,
+                weapon_target_x: obj.weapon_target_x,
+                weapon_target_y: obj.weapon_target_y,
+                cargo_type: obj.cargo_type,
+                cargo_max: obj.cargo_max,
+                cargo_current: obj.cargo_current,
+                shell_health: obj.shell_health,
+                shell_type: obj.shell_type,
+            }
+        })
+        .collect();
     Some(json::encode(&objects).unwrap())
 }
 
@@ -101,7 +105,7 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
                 return None;
             }
 
-            let objects = match object.radar_scan(&engine.objects) {
+            let objects = match object.radar_scan(engine.objects.clone()) {
                 Some(expr) => expr,
                 None => return None,
             };
@@ -162,8 +166,9 @@ pub fn weapon_fire(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: Strin
         }
         Ok(data) => {
             let wfr: WeaponFireRequest = data;
-            for obj in &engine.objects {
-                let mut obj = obj.write().unwrap();
+            for i in engine.objects.clone().iter() {
+                let (k, v) = i;
+                let mut obj = v.write().unwrap();
                 if obj.name == wfr.name && obj.owner == owner {
                     obj.weapon_fire(wfr.x, wfr.y);
                     print!("Огонь объекта {} -- ", obj.name);
@@ -185,11 +190,12 @@ pub fn weapon_stop(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: Strin
         }
         Ok(data) => {
             let name: NameResponse = data;
-            for obj in &engine.objects {
-                let mut obj = obj.write().unwrap();
-                if obj.name == name.name && obj.owner == owner {
-                    obj.weapon_stop();
+            match engine.get_object_with_owner(name.name, owner) {
+                Some(o) => {
+                    let mut object = o.write().unwrap();
+                    object.weapon_stop();
                 }
+                None => {}
             }
         }
     }
@@ -210,15 +216,16 @@ pub fn build(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
             let mut obj_x = 0.0;
             let mut obj_y = 0.0;
 
-            for obj in &engine.objects {
-                let obj = obj.read().unwrap();
-                if obj.name == req.name && obj.owner == owner.clone() &&
-                   obj.otype == ObjectType::Builder {
-                    obj_x = obj.x;
-                    obj_y = obj.y;
-                    flag = true;
-                    break;
+            match engine.get_object_with_owner(req.name, owner.clone()) {
+                Some(o) => {
+                    let obj = o.read().unwrap();
+                    if obj.otype == ObjectType::Builder {
+                        obj_x = obj.x;
+                        obj_y = obj.y;
+                        flag = true;
+                    }
                 }
+                None => {}
             }
             if flag {
                 engine.add_object(req.oname.clone(),

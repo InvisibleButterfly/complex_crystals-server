@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
 
 #[derive(RustcDecodable, RustcEncodable, Clone, PartialEq)]
 pub enum ObjectType {
@@ -176,15 +177,16 @@ impl SampleObject {
     }
 
     pub fn radar_scan(&self,
-                      objects: &Vec<Arc<RwLock<SampleObject>>>)
+                      objects: HashMap<String, Arc<RwLock<SampleObject>>>)
                       -> Option<Vec<Arc<RwLock<SampleObject>>>> {
         let mut result = vec![];
-        for object in objects {
-            let obj = object.read().unwrap();
-            if distance(self.x, self.y, obj.x, obj.y) <= self.radar_radius {
-                result.push(object.clone());
+        objects.iter().map(|x| {
+            let (k, v) = x;
+            let object = v.read().unwrap();
+            if distance(self.x, self.y, object.x, object.y) <= self.radar_radius {
+                result.push(v.clone());
             }
-        }
+        });
         Some(result)
     }
 

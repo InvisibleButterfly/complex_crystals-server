@@ -13,19 +13,21 @@ pub fn generate(mutex: Arc<Mutex<GameEngine>>,
     print!("Генерация астероидов... ");
     const NOISE_SIZE: usize = 65;
     let asteroid_noise = diamond_square::generate_ds(NOISE_SIZE);
+    let mut debug_asteroid_count = 0;
     for y in 0..NOISE_SIZE {
         for x in 0..NOISE_SIZE {
             let level = asteroid_noise[x][y];
             if level > 0.6 {
-                engine.add_object("Asteroid".to_string(),
+                engine.add_object(format!("Asteroid{}{}", &*x.to_string(), &*y.to_string()),
                                   x as f64 * 100.0,
                                   y as f64 * 100.0,
                                   ObjectType::Asteroid,
                                   "unknown".to_owned());
+                debug_asteroid_count += 1;
             }
         }
     }
-    println!("Завершена");
+    println!("{} Завершена", debug_asteroid_count);
 
     for (i, player) in players.iter().enumerate() {
         let mut basename = player.clone();

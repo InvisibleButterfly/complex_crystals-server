@@ -2,6 +2,7 @@ pub mod sampleobject;
 
 use self::sampleobject::*;
 use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ServerInfo {
@@ -12,7 +13,7 @@ pub struct ServerInfo {
 
 pub struct GameEngine {
     pub info: ServerInfo,
-    pub objects: Vec<Arc<RwLock<SampleObject>>>,
+    pub objects: HashMap<String, Arc<RwLock<SampleObject>>>,
     pub world_size_x: f64,
     pub world_size_y: f64,
 }
@@ -20,7 +21,7 @@ pub struct GameEngine {
 impl GameEngine {
     pub fn new() -> Self {
         GameEngine {
-            objects: vec![],
+            objects: HashMap::new(),
             info: ServerInfo {
                 name: "ServerName".to_string(),
                 status: "Ok".to_string(),
@@ -40,20 +41,33 @@ impl GameEngine {
                       coord_y: f64,
                       otype: ObjectType,
                       owner: String) {
-        self.objects.push(Arc::new(RwLock::new(SampleObject::new(owner,
-                                                                 object_name,
-                                                                 otype,
-                                                                 coord_x,
-                                                                 coord_y))));
+        self.objects.insert(object_name.clone(),
+                            Arc::new(RwLock::new(SampleObject::new(owner,
+                                                                   object_name,
+                                                                   otype,
+                                                                   coord_x,
+                                                                   coord_y))));
     }
 
     pub fn get_object(&self, name: String) -> Option<Arc<RwLock<SampleObject>>> {
-        for object in &self.objects {
-            if object.read().unwrap().name == name {
-                return Some(object.clone());
+        self.objects.get(&name).map(|x| x.clone())
+    }
+
+    pub fn get_object_with_owner(&self,
+                                 name: String,
+                                 owner: String)
+                                 -> Option<Arc<RwLock<SampleObject>>> {
+        let o_object = match self.objects.get(&name) {
+            Some(e) => e,
+            None => return None, 
+        };
+        {
+            let object = o_object.read().unwrap();
+            if object.owner != owner {
+                return None;
             }
         }
-        None
+        Some(o_object.clone())
     }
 
     pub fn set_object_dest(&mut self, object_name: String, x: f64, y: f64, owner: String) {
@@ -69,77 +83,51 @@ impl GameEngine {
     }
 
     pub fn game_loop(&mut self, elapsed: f64) {
-        for (i, object) in self.objects.clone().iter().enumerate() {
-            {
-                // Уничтожение объекта в случае закончившихся HP
-                let object = object.read().unwrap();
-                if object.shell_health <= 0.0 {
-                    self.objects.remove(i);
-                    continue;
-                }
+        for i in self.objects.clone().iter() {
+            // Объявление штук
+            let (k, v) = i;
+            let mut object = v.write().unwrap();
+
+            // Уничтожение объекта в случае закончившихся HP
+            if object.shell_health <= 0.0 {
+                self.objects.remove(k);
             }
 
-            // Работа двигателя
-            object.write().unwrap().engine_update(elapsed);
+            // Двигатели
+            object.engine_update(elapsed);
 
-            // Очень много страшного кода для боевой системы
-            let weapon_target_x;
-            let weapon_target_y;
-            let weapon_active;
-            let weapon_radius;
-            let weapon_type;
-            let x;
-            let y;
-            {
-                // Расход боеприпасов при выстреле
-                let mut object = object.write().unwrap();
-                if object.weapon_active &&
-                   sampleobject::distance(object.x,
-                                          object.y,
-                                          object.weapon_target_x,
-                                          object.weapon_target_y) <=
-                   object.weapon_radius {
-                    match object.weapon_type {
-                        WeaponType::None => {}
-                        WeaponType::Mining => {
-                            if !object.cargo_add(0.1) {
-                                // TODO: Тут баг. Хранилище не должно пополняться в случае направления шахтерского луча в пустоту.
-                                object.weapon_active = false;
-                            }
+            // Боевая система
+            // Проверка, находится ли цель в радиусе стрельбы
+            if object.weapon_active &&
+               sampleobject::distance(object.x,
+                                      object.y,
+                                      object.weapon_target_x,
+                                      object.weapon_target_y) <=
+               object.weapon_radius {
+                match object.weapon_type {
+                    WeaponType::None => {}
+                    WeaponType::Mining => {
+                        if !object.cargo_add(0.1) {
+                            object.weapon_active = false; // Отключаем оружие при полном заполнении трюма
                         }
-                        WeaponType::Laser => {
-                            if !object.cargo_remove(0.1) {
-                                object.weapon_active = false;
-                            }
+                    }
+                    WeaponType::Laser => {
+                        if !object.cargo_remove(0.1) {
+                            object.weapon_active = false; // Отключаем оружие при отсутствии патронов
                         }
                     }
                 }
-                weapon_target_x = object.weapon_target_x;
-                weapon_target_y = object.weapon_target_y;
-                weapon_active = object.weapon_active;
-                weapon_radius = object.weapon_radius;
-                weapon_type = object.weapon_type.clone();
-                x = object.x;
-                y = object.y;
-            }
 
-            // Нанесение выстрелом повреждений
-            if weapon_active &&
-               sampleobject::distance(x, y, weapon_target_x, weapon_target_y) <= weapon_radius {
-                for obj in &self.objects {
-                    let mut obj = obj.write().unwrap();
-                    if obj.x == weapon_target_x && obj.y == weapon_target_y {
-                        match weapon_type {
-                            WeaponType::None => {}
-                            WeaponType::Mining => {
-                                obj.shell_damage(WeaponType::Mining, 1.0);
-                            }
-                            WeaponType::Laser => {
-                                obj.shell_damage(WeaponType::Laser, 1.0);
-                            }
-                        }
+                // Нанесение повреждений
+                self.objects.clone().iter().map(|y| {
+                    let (t_k, t_v) = y;
+                    let mut t_object = t_v.write().unwrap();
+
+                    if t_object.x == object.weapon_target_x &&
+                       t_object.y == object.weapon_target_y {
+                        t_object.shell_damage(object.weapon_type.clone(), 1.0);
                     }
-                }
+                });
             }
         }
     }
