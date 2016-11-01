@@ -63,7 +63,7 @@ fn main() {
         tps += 1;
 
         if now - last_second > 1_000_000_000 {
-            println!("TPS: {}", tps);
+            // println!("TPS: {}", tps);
             last_second = now;
             engine.update_tps(tps);
             tps = 0;

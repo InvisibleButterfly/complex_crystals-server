@@ -151,7 +151,7 @@ impl SampleObject {
                     otype: otype,
                     x: x,
                     y: y,
-                    drive_speed: 0.000,
+                    drive_speed: 0.001,
                     drive_dest_x: x,
                     drive_dest_y: y,
                     radar_radius: 100.0,
@@ -179,14 +179,17 @@ impl SampleObject {
     pub fn radar_scan(&self,
                       objects: HashMap<String, Arc<RwLock<SampleObject>>>)
                       -> Option<Vec<Arc<RwLock<SampleObject>>>> {
-        let mut result = vec![];
-        objects.iter().map(|x| {
-            let (k, v) = x;
-            let object = v.read().unwrap();
-            if distance(self.x, self.y, object.x, object.y) <= self.radar_radius {
-                result.push(v.clone());
-            }
-        });
+        let result: Vec<Arc<RwLock<SampleObject>>> = objects.iter()
+            .filter_map(|x| {
+                let (_, v) = x;
+                let object = v.read().unwrap();
+                if distance(self.x, self.y, object.x, object.y) <= self.radar_radius {
+                    Some(v.clone())
+                } else {
+                    None
+                }
+            })
+            .collect();
         Some(result)
     }
 
