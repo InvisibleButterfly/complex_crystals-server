@@ -119,7 +119,7 @@ impl GameEngine {
                 }
 
                 // Нанесение повреждений
-                self.objects.clone().iter().map(|y| {
+                for y in self.objects.clone().iter() {
                     let (t_k, t_v) = y;
                     let mut t_object = t_v.write().unwrap();
 
@@ -127,7 +127,7 @@ impl GameEngine {
                        t_object.y == object.weapon_target_y {
                         t_object.shell_damage(object.weapon_type.clone(), 1.0);
                     }
-                });
+                }
             }
         }
     }
