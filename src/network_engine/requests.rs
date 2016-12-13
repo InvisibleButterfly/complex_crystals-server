@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use ::game_engine::GameEngine;
+use ::game_engine::events::*;
 use ::rustc_serialize::json;
 use ::network_engine::structures::*;
 use ::game_engine::sampleobject::{SampleObject, RadarType, ObjectType};
@@ -11,6 +12,11 @@ pub fn world_size(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
         height: engine.world_size_y,
     };
     Some(json::encode(&response).unwrap())
+}
+
+pub fn info(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
+    let engine = mutex.lock().unwrap();
+    Some(json::encode(&engine.info).unwrap())
 }
 
 pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
@@ -49,7 +55,7 @@ pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
 }
 
 pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String) -> bool {
-    let engine = mutex.lock().unwrap();
+    let mut engine = mutex.lock().unwrap();
     match json::decode(&input) {
         Err(e) => {
             println!("Json parsing error: {:?}", e);
@@ -57,39 +63,25 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
         }
         Ok(data) => {
             let mut mvr: MoveObjectRequest = data;
-            let object = match engine.get_object(mvr.name) {
-                Some(expr) => expr,
-                None => return false,
-            };
-            let mut object = object.write().unwrap();
 
-            if object.owner != owner {
-                return false;
-            }
+            println!("Передвижение объекта {} -- x: {} y: {}",
+                     mvr.name,
+                     mvr.x,
+                     mvr.y);
 
-            if mvr.x > engine.world_size_x {
-                mvr.x = engine.world_size_x;
-            }
-            if mvr.y > engine.world_size_y {
-                mvr.y = engine.world_size_y;
-            }
-
-            object.drive_move_to(mvr.x, mvr.y);
-            print!("Передвижение объекта {} -- ",
-                   object.name);
-            print!("x: {} ", mvr.x);
-            println!("y: {} ", mvr.y);
+            engine.add_event(Event::Move(MoveEvent {
+                name: mvr.name,
+                owner: owner,
+                dest_x: mvr.x,
+                dest_y: mvr.y,
+            }));
         }
     }
     true
 }
 
-pub fn info(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
-    let engine = mutex.lock().unwrap();
-    Some(json::encode(&engine.info).unwrap())
-}
-
 pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> Option<String> {
+    // TODO Сделать что-то с этим ужасом
     let engine = mutex.lock().unwrap();
     match json::decode(&request) {
         Err(e) => {
@@ -158,7 +150,7 @@ pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
 }
 
 pub fn weapon_fire(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> bool {
-    let engine = mutex.lock().unwrap();
+    let mut engine = mutex.lock().unwrap();
     match json::decode(&request) {
         Err(e) => {
             println!("Json parsing error: {:?}", e);
@@ -166,37 +158,17 @@ pub fn weapon_fire(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: Strin
         }
         Ok(data) => {
             let wfr: WeaponFireRequest = data;
-            for i in engine.objects.clone().iter() {
-                let (k, v) = i;
-                let mut obj = v.write().unwrap();
-                if obj.name == wfr.name && obj.owner == owner {
-                    obj.weapon_fire(wfr.x, wfr.y);
-                    print!("Огонь объекта {} -- ", obj.name);
-                    print!("x: {} ", wfr.x);
-                    println!("y: {} ", wfr.y);
-                }
-            }
-        }
-    }
-    true
-}
+            println!("Огонь объекта {} -- x: {} y: {}",
+                     wfr.name,
+                     wfr.x,
+                     wfr.y);
 
-pub fn weapon_stop(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> bool {
-    let engine = mutex.lock().unwrap();
-    match json::decode(&request) {
-        Err(e) => {
-            println!("Json parsing error: {:?}", e);
-            return false;
-        }
-        Ok(data) => {
-            let name: NameResponse = data;
-            match engine.get_object_with_owner(name.name, owner) {
-                Some(o) => {
-                    let mut object = o.write().unwrap();
-                    object.weapon_stop();
-                }
-                None => {}
-            }
+            engine.add_event(Event::Fire(FireEvent {
+                name: wfr.name,
+                owner: owner,
+                dest_x: wfr.x,
+                dest_y: wfr.y,
+            }));
         }
     }
     true
@@ -212,28 +184,17 @@ pub fn build(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
         Ok(data) => {
             let req: BuildRequest = data;
 
-            let mut flag = false;
-            let mut obj_x = 0.0;
-            let mut obj_y = 0.0;
+            println!("Постройка объекта {} при помощи {}",
+                     req.oname,
+                     req.name);
 
-            match engine.get_object_with_owner(req.name, owner.clone()) {
-                Some(o) => {
-                    let obj = o.read().unwrap();
-                    if obj.otype == ObjectType::Builder {
-                        obj_x = obj.x;
-                        obj_y = obj.y;
-                        flag = true;
-                    }
-                }
-                None => {}
-            }
-            if flag {
-                engine.add_object(req.oname.clone(),
-                                  obj_x,
-                                  obj_y,
-                                  req.otype.clone(),
-                                  owner.clone());
-            }
+            engine.add_event(Event::Build(BuildEvent {
+                name: req.name,
+                owner: owner,
+                b_type: req.otype,
+                b_name: req.oname,
+            }));
+
         }
     }
     true

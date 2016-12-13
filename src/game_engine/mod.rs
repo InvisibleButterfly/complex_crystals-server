@@ -1,8 +1,10 @@
 pub mod sampleobject;
+pub mod events;
 
 use self::sampleobject::*;
-use std::sync::{Arc, RwLock};
-use std::collections::HashMap;
+use self::events::*;
+use std::sync::{Arc, RwLock, RwLockWriteGuard};
+use std::collections::{HashMap, VecDeque};
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
 pub struct ServerInfo {
@@ -16,6 +18,7 @@ pub struct GameEngine {
     pub objects: HashMap<String, Arc<RwLock<SampleObject>>>,
     pub world_size_x: f64,
     pub world_size_y: f64,
+    pub events: VecDeque<Event>,
 }
 
 impl GameEngine {
@@ -29,6 +32,7 @@ impl GameEngine {
             },
             world_size_x: 800.0,
             world_size_y: 600.0,
+            events: VecDeque::new(),
         }
     }
     pub fn update_tps(&mut self, tps: u16) {
@@ -70,19 +74,23 @@ impl GameEngine {
         Some(o_object.clone())
     }
 
-    pub fn set_object_dest(&mut self, object_name: String, x: f64, y: f64, owner: String) {
-        match self.get_object(object_name) {
-            Some(data) => {
-                let mut object = data.write().unwrap();
-                if object.owner == owner {
-                    object.drive_move_to(x, y)
-                }
-            }
-            None => {}
+    pub fn interact_with_object<F>(&mut self, name: String, owner: String, closure: F)
+        where F: Fn(&mut GameEngine, RwLockWriteGuard<SampleObject>)
+    {
+        let mut o_object = match self.objects.get(&name) {
+            Some(e) => e.clone(),
+            None => return,
+        };
+        let mut object = o_object.write().unwrap();
+        if object.owner != owner {
+            return;
         }
+        closure(self, object);
     }
 
     pub fn game_loop(&mut self, elapsed: f64) {
+        self.event();
+
         for i in self.objects.clone().iter() {
             // Объявление штук
             let (k, v) = i;
@@ -128,6 +136,42 @@ impl GameEngine {
                         t_object.shell_damage(object.weapon_type.clone(), 1.0);
                     }
                 }
+            }
+        }
+    }
+    pub fn add_event(&mut self, event: Event) {
+        self.events.push_front(event);
+    }
+    fn event(&mut self) {
+        let event = match self.events.pop_back() {
+            Some(e) => e,
+            None => return,
+        };
+        match event {
+            Event::Move(m_e) => {
+                self.interact_with_object(m_e.name.clone(),
+                                          m_e.owner.clone(),
+                                          move |_, mut object| {
+                                              object.drive_move_to(m_e.dest_x, m_e.dest_y)
+                                          });
+            }
+            Event::Fire(f_e) => {
+                self.interact_with_object(f_e.name.clone(),
+                                          f_e.owner.clone(),
+                                          move |_, mut object| {
+                                              object.weapon_fire(f_e.dest_x, f_e.dest_y);
+                                          });
+            }
+            Event::Build(b_e) => {
+                self.interact_with_object(b_e.name.clone(),
+                                          b_e.owner.clone(),
+                                          move |engine, mut object| {
+                    engine.add_object(b_e.b_name.clone(),
+                                      object.x,
+                                      object.y,
+                                      b_e.b_type.clone(),
+                                      object.owner.clone());
+                });
             }
         }
     }
