@@ -11,13 +11,13 @@ pub fn generate(mutex: Arc<Mutex<GameEngine>>,
     let mut engine = mutex.lock().unwrap();
 
     print!("Генерация астероидов... ");
-    const NOISE_SIZE: usize = 65;
+    const NOISE_SIZE: usize = 513;
     let asteroid_noise = diamond_square::generate_ds(NOISE_SIZE);
     let mut debug_asteroid_count = 0;
     for y in 0..NOISE_SIZE {
         for x in 0..NOISE_SIZE {
-            let level = asteroid_noise[x][y];
-            if level > 0.6 {
+            let level = asteroid_noise[x][y].powf(2.0);
+            if level > 1.0 {
                 engine.add_object(format!("Asteroid{}{}", &*x.to_string(), &*y.to_string()),
                                   x as f64 * 100.0,
                                   y as f64 * 100.0,
