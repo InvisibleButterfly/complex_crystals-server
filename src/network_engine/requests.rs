@@ -3,7 +3,7 @@ use ::game_engine::GameEngine;
 use ::game_engine::events::*;
 use ::rustc_serialize::json;
 use ::network_engine::structures::*;
-use ::game_engine::sampleobject::{SampleObject, RadarType, ObjectType};
+use ::game_engine::sampleobject::{SampleObject, RadarType};
 
 pub fn world_size(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     let engine = mutex.lock().unwrap();
@@ -21,11 +21,11 @@ pub fn info(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
 
 pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     let engine = mutex.lock().unwrap();
-    let mut objects: Vec<SampleObject> = engine.objects
+    let objects: Vec<SampleObject> = engine.objects
         .clone()
         .iter()
         .map(|x| {
-            let (k, v) = x;
+            let (_, v) = x;
             let obj = v.read().unwrap().clone();
             SampleObject {
                 owner: obj.owner,
@@ -62,7 +62,7 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
             return false;
         }
         Ok(data) => {
-            let mut mvr: MoveObjectRequest = data;
+            let mvr: MoveObjectRequest = data;
 
             println!("Передвижение объекта {} -- x: {} y: {}",
                      mvr.name,

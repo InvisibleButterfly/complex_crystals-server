@@ -77,11 +77,11 @@ impl GameEngine {
     pub fn interact_with_object<F>(&mut self, name: String, owner: String, closure: F)
         where F: Fn(&mut GameEngine, RwLockWriteGuard<SampleObject>)
     {
-        let mut o_object = match self.objects.get(&name) {
+        let object = match self.objects.get(&name) {
             Some(e) => e.clone(),
             None => return,
         };
-        let mut object = o_object.write().unwrap();
+        let object = object.write().unwrap();
         if object.owner != owner {
             return;
         }
@@ -95,7 +95,7 @@ impl GameEngine {
             Some(e) => e.clone(),
             None => return,
         };
-        let mut object = object.write().unwrap();
+        let object = object.write().unwrap();
         closure(self, object);
     }
 
@@ -113,9 +113,7 @@ impl GameEngine {
         };
         match event {
             Event::MoveRequest(m_e) => {
-                self.interact_with_object(m_e.name.clone(),
-                                          m_e.owner.clone(),
-                                          move |engine, mut object| {
+                self.interact_with_object(m_e.name.clone(), m_e.owner.clone(), |engine, _| {
                     engine.add_event(Event::Move(MoveEvent {
                         name: m_e.name.clone(),
                         dest_x: m_e.dest_x,
@@ -139,9 +137,7 @@ impl GameEngine {
                 });
             }
             Event::BuildRequest(b_e) => {
-                self.interact_with_object(b_e.name.clone(),
-                                          b_e.owner.clone(),
-                                          move |engine, mut object| {
+                self.interact_with_object(b_e.name.clone(), b_e.owner.clone(), |engine, object| {
                     engine.add_object(b_e.b_name.clone(),
                                       object.x,
                                       object.y,
@@ -174,7 +170,7 @@ impl GameEngine {
             Event::Damage(d_e) => {
                 for i in self.objects.clone().iter() {
                     // Объявление штук
-                    let (k, v) = i;
+                    let (_, v) = i;
                     let mut object = v.write().unwrap();
 
                     if sampleobject::distance(object.x, object.y, d_e.x, d_e.y) <= d_e.size {
