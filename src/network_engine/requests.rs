@@ -69,7 +69,7 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
                      mvr.x,
                      mvr.y);
 
-            engine.add_event(Event::Move(MoveEvent {
+            engine.add_event(Event::MoveRequest(NetworkMoveEvent {
                 name: mvr.name,
                 owner: owner,
                 dest_x: mvr.x,
@@ -163,7 +163,7 @@ pub fn weapon_fire(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: Strin
                      wfr.x,
                      wfr.y);
 
-            engine.add_event(Event::Fire(FireEvent {
+            engine.add_event(Event::FireRequest(NetworkFireEvent {
                 name: wfr.name,
                 owner: owner,
                 dest_x: wfr.x,
@@ -188,7 +188,7 @@ pub fn build(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> 
                      req.oname,
                      req.name);
 
-            engine.add_event(Event::Build(BuildEvent {
+            engine.add_event(Event::BuildRequest(NetworkBuildEvent {
                 name: req.name,
                 owner: owner,
                 b_type: req.otype,

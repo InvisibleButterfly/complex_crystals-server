@@ -88,81 +88,57 @@ impl GameEngine {
         closure(self, object);
     }
 
-    pub fn game_loop(&mut self, elapsed: f64) {
-        self.event();
-
-        for i in self.objects.clone().iter() {
-            // Объявление штук
-            let (k, v) = i;
-            let mut object = v.write().unwrap();
-
-            // Уничтожение объекта в случае закончившихся HP
-            if object.shell_health <= 0.0 {
-                self.objects.remove(k);
-            }
-
-            // Двигатели
-            object.engine_update(elapsed);
-
-            // Боевая система
-            // Проверка, находится ли цель в радиусе стрельбы
-            if object.weapon_active &&
-               sampleobject::distance(object.x,
-                                      object.y,
-                                      object.weapon_target_x,
-                                      object.weapon_target_y) <=
-               object.weapon_radius {
-                match object.weapon_type {
-                    WeaponType::None => {}
-                    WeaponType::Mining => {
-                        if !object.cargo_add(0.1) {
-                            object.weapon_active = false; // Отключаем оружие при полном заполнении трюма
-                        }
-                    }
-                    WeaponType::Laser => {
-                        if !object.cargo_remove(0.1) {
-                            object.weapon_active = false; // Отключаем оружие при отсутствии патронов
-                        }
-                    }
-                }
-
-                // Нанесение повреждений
-                for y in self.objects.clone().iter() {
-                    let (t_k, t_v) = y;
-                    let mut t_object = t_v.write().unwrap();
-
-                    if t_object.x == object.weapon_target_x &&
-                       t_object.y == object.weapon_target_y {
-                        t_object.shell_damage(object.weapon_type.clone(), 1.0);
-                    }
-                }
-            }
-        }
+    pub fn interact<F>(&mut self, name: String, closure: F)
+        where F: Fn(&mut GameEngine, RwLockWriteGuard<SampleObject>)
+    {
+        let object = match self.objects.get(&name) {
+            Some(e) => e.clone(),
+            None => return,
+        };
+        let mut object = object.write().unwrap();
+        closure(self, object);
     }
+
+    pub fn game_loop(&mut self, elapsed: f64) {
+        self.event(elapsed);
+    }
+
     pub fn add_event(&mut self, event: Event) {
         self.events.push_front(event);
     }
-    fn event(&mut self) {
+    fn event(&mut self, elapsed: f64) {
         let event = match self.events.pop_back() {
             Some(e) => e,
             None => return,
         };
         match event {
-            Event::Move(m_e) => {
+            Event::MoveRequest(m_e) => {
                 self.interact_with_object(m_e.name.clone(),
                                           m_e.owner.clone(),
-                                          move |_, mut object| {
-                                              object.drive_move_to(m_e.dest_x, m_e.dest_y)
-                                          });
+                                          move |engine, mut object| {
+                    engine.add_event(Event::Move(MoveEvent {
+                        name: m_e.name.clone(),
+                        dest_x: m_e.dest_x,
+                        dest_y: m_e.dest_y,
+                    }));
+                });
             }
-            Event::Fire(f_e) => {
+            Event::FireRequest(f_e) => {
                 self.interact_with_object(f_e.name.clone(),
                                           f_e.owner.clone(),
-                                          move |_, mut object| {
-                                              object.weapon_fire(f_e.dest_x, f_e.dest_y);
-                                          });
+                                          move |engine, mut object| {
+                    if object.cargo_remove(1.0) {
+                        engine.add_event(Event::Damage(DamageEvent {
+                            x: object.weapon_target_x,
+                            y: object.weapon_target_y,
+                            size: object.weapon_radius,
+                            d_type: object.weapon_type.clone(),
+                            damage: 1.0,
+                        }));
+                    }
+                });
             }
-            Event::Build(b_e) => {
+            Event::BuildRequest(b_e) => {
                 self.interact_with_object(b_e.name.clone(),
                                           b_e.owner.clone(),
                                           move |engine, mut object| {
@@ -172,6 +148,44 @@ impl GameEngine {
                                       b_e.b_type.clone(),
                                       object.owner.clone());
                 });
+            }
+            Event::Move(m_e) => {
+                self.interact(m_e.name.clone(), |engine, mut object| {
+                    if !((object.x - m_e.dest_x).abs() < ::FLOAT_ERR) {
+                        if object.x < m_e.dest_x {
+                            object.x += object.drive_speed * elapsed;
+                        } else if object.x > m_e.dest_x {
+                            object.x -= object.drive_speed * elapsed;
+                        }
+                    }
+                    if !((object.y - m_e.dest_y).abs() < ::FLOAT_ERR) {
+                        if object.y < m_e.dest_y {
+                            object.y += object.drive_speed * elapsed;
+                        } else if object.y > m_e.dest_y {
+                            object.y -= object.drive_speed * elapsed;
+                        }
+                    }
+                    engine.add_event(Event::Move(m_e.clone()));
+                });
+            }
+            Event::Destroy(d_e) => {
+                self.objects.remove(&d_e.name);
+            }
+            Event::Damage(d_e) => {
+                for i in self.objects.clone().iter() {
+                    // Объявление штук
+                    let (k, v) = i;
+                    let mut object = v.write().unwrap();
+
+                    if sampleobject::distance(object.x, object.y, d_e.x, d_e.y) <= d_e.size {
+                        object.shell_damage(d_e.d_type.clone(), d_e.damage);
+                        if object.shell_health <= 0.0 {
+                            self.add_event(Event::Destroy(DestroyEvent {
+                                name: object.name.clone(),
+                            }));
+                        }
+                    }
+                }
             }
         }
     }
