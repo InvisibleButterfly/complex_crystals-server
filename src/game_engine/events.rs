@@ -7,6 +7,7 @@ pub enum Event {
     Move(MoveEvent),
     Destroy(DestroyEvent),
     Damage(DamageEvent),
+    Build(BuildEvent),
 }
 
 pub struct NetworkMoveEvent {
@@ -47,4 +48,14 @@ pub struct DamageEvent {
     pub size: f64,
     pub d_type: WeaponType,
     pub damage: f64,
+}
+
+#[derive(Clone)]
+pub struct BuildEvent {
+    pub name: String,
+    pub b_name: String,
+    pub b_type: ObjectType,
+    pub speed: f64,
+    pub progress: f64,
+    pub max_progress: f64,
 }

@@ -138,11 +138,14 @@ impl GameEngine {
             }
             Event::BuildRequest(b_e) => {
                 self.interact_with_object(b_e.name.clone(), b_e.owner.clone(), |engine, object| {
-                    engine.add_object(b_e.b_name.clone(),
-                                      object.x,
-                                      object.y,
-                                      b_e.b_type.clone(),
-                                      object.owner.clone());
+                    engine.add_event(Event::Build(BuildEvent {
+                        name: b_e.name.clone(),
+                        b_name: b_e.b_name.clone(),
+                        b_type: b_e.b_type.clone(),
+                        speed: 0.1,
+                        progress: 0.0,
+                        max_progress: 100.0,
+                    }));
                 });
             }
             Event::Move(m_e) => {
@@ -169,7 +172,6 @@ impl GameEngine {
             }
             Event::Damage(d_e) => {
                 for i in self.objects.clone().iter() {
-                    // Объявление штук
                     let (_, v) = i;
                     let mut object = v.write().unwrap();
 
@@ -181,6 +183,24 @@ impl GameEngine {
                             }));
                         }
                     }
+                }
+            }
+            Event::Build(b_e) => {
+                if b_e.progress >= b_e.max_progress {
+                    let object = match self.get_object(b_e.name) {
+                        Some(e) => e,
+                        None => return,
+                    };
+                    let object = object.read().unwrap();
+                    self.add_object(b_e.b_name.clone(),
+                                    object.x,
+                                    object.y,
+                                    b_e.b_type.clone(),
+                                    object.owner.clone());
+                } else {
+                    let mut new_event = b_e.clone();
+                    new_event.progress += b_e.speed * elapsed;
+                    self.add_event(Event::Build(new_event));
                 }
             }
         }
