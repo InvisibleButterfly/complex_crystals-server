@@ -1,8 +1,10 @@
 pub mod sampleobject;
 pub mod events;
+mod config;
 
 use self::sampleobject::*;
 use self::events::*;
+use self::config::GameConfig;
 use std::sync::{Arc, RwLock, RwLockWriteGuard};
 use std::collections::{HashMap, VecDeque};
 
@@ -19,20 +21,23 @@ pub struct GameEngine {
     pub world_size_x: f64,
     pub world_size_y: f64,
     pub events: VecDeque<Event>,
+    pub config: GameConfig,
 }
 
 impl GameEngine {
     pub fn new() -> Self {
+        let config = GameConfig::new("config/engine.json");
         GameEngine {
             objects: HashMap::new(),
             info: ServerInfo {
-                name: "ServerName".to_string(),
+                name: config.servername.clone(),
                 status: "Ok".to_string(),
                 tps: 0u16,
             },
             world_size_x: 800.0,
             world_size_y: 600.0,
             events: VecDeque::new(),
+            config: config,
         }
     }
     pub fn update_tps(&mut self, tps: u16) {
@@ -137,7 +142,7 @@ impl GameEngine {
                 });
             }
             Event::BuildRequest(b_e) => {
-                self.interact_with_object(b_e.name.clone(), b_e.owner.clone(), |engine, object| {
+                self.interact_with_object(b_e.name.clone(), b_e.owner.clone(), |engine, _| {
                     engine.add_event(Event::Build(BuildEvent {
                         name: b_e.name.clone(),
                         b_name: b_e.b_name.clone(),
