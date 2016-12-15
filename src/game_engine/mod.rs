@@ -25,7 +25,7 @@ pub struct GameEngine {
 }
 
 impl GameEngine {
-    pub fn new() -> Self {
+    pub fn new(width: f64, height: f64) -> Self {
         let config = GameConfig::new("config/engine.json");
         GameEngine {
             objects: HashMap::new(),
@@ -34,8 +34,8 @@ impl GameEngine {
                 status: "Ok".to_string(),
                 tps: 0u16,
             },
-            world_size_x: 800.0,
-            world_size_y: 600.0,
+            world_size_x: width,
+            world_size_y: height,
             events: VecDeque::new(),
             config: config,
         }

@@ -36,7 +36,7 @@ fn main() {
     println!("Высота: {}", height);
     println!("Игроки: {:?}", players);
 
-    let mutex_engine = Arc::new(Mutex::new(GameEngine::new()));
+    let mutex_engine = Arc::new(Mutex::new(GameEngine::new(width, height)));
 
     level_generator::generate(mutex_engine.clone(), width, height, players);
 
