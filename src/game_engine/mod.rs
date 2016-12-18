@@ -118,7 +118,11 @@ impl GameEngine {
         };
         match event {
             Event::MoveRequest(m_e) => {
-                self.interact_with_object(m_e.name.clone(), m_e.owner.clone(), |engine, _| {
+                self.interact_with_object(m_e.name.clone(),
+                                          m_e.owner.clone(),
+                                          |engine, mut object| {
+                    object.drive_dest_x = m_e.dest_x;
+                    object.drive_dest_y = m_e.dest_y;
                     engine.add_event(Event::Move(MoveEvent {
                         name: m_e.name.clone(),
                         dest_x: m_e.dest_x,
@@ -155,21 +159,27 @@ impl GameEngine {
             }
             Event::Move(m_e) => {
                 self.interact(m_e.name.clone(), |engine, mut object| {
-                    if !((object.x - m_e.dest_x).abs() < ::FLOAT_ERR) {
-                        if object.x < m_e.dest_x {
-                            object.x += object.drive_speed * elapsed;
-                        } else if object.x > m_e.dest_x {
-                            object.x -= object.drive_speed * elapsed;
+                    if distance(object.x, object.y, object.drive_dest_x, object.drive_dest_y) <
+                       object.drive_speed * elapsed {
+                        object.x = object.drive_dest_x;
+                        object.y = object.drive_dest_y;
+                    } else {
+                        if !((object.x - m_e.dest_x).abs() < ::FLOAT_ERR) {
+                            if object.x < m_e.dest_x {
+                                object.x += object.drive_speed * elapsed;
+                            } else if object.x > m_e.dest_x {
+                                object.x -= object.drive_speed * elapsed;
+                            }
                         }
-                    }
-                    if !((object.y - m_e.dest_y).abs() < ::FLOAT_ERR) {
-                        if object.y < m_e.dest_y {
-                            object.y += object.drive_speed * elapsed;
-                        } else if object.y > m_e.dest_y {
-                            object.y -= object.drive_speed * elapsed;
+                        if !((object.y - m_e.dest_y).abs() < ::FLOAT_ERR) {
+                            if object.y < m_e.dest_y {
+                                object.y += object.drive_speed * elapsed;
+                            } else if object.y > m_e.dest_y {
+                                object.y -= object.drive_speed * elapsed;
+                            }
                         }
+                        engine.add_event(Event::Move(m_e.clone()));
                     }
-                    engine.add_event(Event::Move(m_e.clone()));
                 });
             }
             Event::Destroy(d_e) => {
