@@ -1,6 +1,10 @@
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
+use ::rustc_serialize::json;
+use std::fs::File;
+use std::io::Read;
+
 #[derive(RustcDecodable, RustcEncodable, Clone, PartialEq)]
 pub enum ObjectType {
     Asteroid,
@@ -71,104 +75,21 @@ pub struct SampleObject {
 
 impl SampleObject {
     pub fn new(owner: String, name: String, otype: ObjectType, x: f64, y: f64) -> Self {
-        match otype {
-            ObjectType::Asteroid => {
-                SampleObject {
-                    owner: owner,
-                    name: name,
-                    otype: otype,
-                    x: x,
-                    y: y,
-                    drive_speed: 0.0,
-                    drive_dest_x: x,
-                    drive_dest_y: y,
-                    radar_radius: 0.0,
-                    radar_type: RadarType::None,
-                    weapon_active: false,
-                    weapon_type: WeaponType::None,
-                    weapon_radius: 0.0,
-                    weapon_target_x: x,
-                    weapon_target_y: y,
-                    cargo_type: CargoType::None,
-                    cargo_max: 0.0,
-                    cargo_current: 0.0,
-                    shell_health: 1000.0,
-                    shell_type: ArmorType::Asteroid,
-                }
-            }
-            ObjectType::Harvester => {
-                SampleObject {
-                    owner: owner,
-                    name: name,
-                    otype: otype,
-                    x: x,
-                    y: y,
-                    drive_speed: 0.001,
-                    drive_dest_x: x,
-                    drive_dest_y: y,
-                    radar_radius: 10.0,
-                    radar_type: RadarType::Middle,
-                    weapon_active: false,
-                    weapon_type: WeaponType::Mining,
-                    weapon_radius: 10.0,
-                    weapon_target_x: x,
-                    weapon_target_y: y,
-                    cargo_type: CargoType::Mining,
-                    cargo_max: 100.0,
-                    cargo_current: 0.0,
-                    shell_health: 100.0,
-                    shell_type: ArmorType::Light,
-                }
-            }
+        let mut object: SampleObject = match otype {
+            ObjectType::Asteroid => json::decode(&read_file("objects/asteroid.json")).unwrap(),
+            ObjectType::Harvester => json::decode(&read_file("objects/harvester.json")).unwrap(),
             ObjectType::Battlecruiser => {
-                SampleObject {
-                    owner: owner,
-                    name: name,
-                    otype: otype,
-                    x: x,
-                    y: y,
-                    drive_speed: 0.002,
-                    drive_dest_x: x,
-                    drive_dest_y: y,
-                    radar_radius: 100.0,
-                    radar_type: RadarType::Military,
-                    weapon_active: false,
-                    weapon_type: WeaponType::Laser,
-                    weapon_radius: 1.0,
-                    weapon_target_x: x,
-                    weapon_target_y: y,
-                    cargo_type: CargoType::Battery,
-                    cargo_max: 100.0,
-                    cargo_current: 100.0,
-                    shell_health: 300.0,
-                    shell_type: ArmorType::Light,
-                }
+                json::decode(&read_file("objects/battlecruiser.json")).unwrap()
             }
-            ObjectType::Builder => {
-                SampleObject {
-                    owner: owner,
-                    name: name,
-                    otype: otype,
-                    x: x,
-                    y: y,
-                    drive_speed: 0.001,
-                    drive_dest_x: x,
-                    drive_dest_y: y,
-                    radar_radius: 100.0,
-                    radar_type: RadarType::Simple,
-                    weapon_active: false,
-                    weapon_type: WeaponType::None,
-                    weapon_radius: 0.0,
-                    weapon_target_x: x,
-                    weapon_target_y: y,
-                    cargo_type: CargoType::Mining,
-                    cargo_max: 10000.0,
-                    cargo_current: 0.0,
-                    shell_health: 2000.0,
-                    shell_type: ArmorType::Building,
-                }
-            }
-        }
+            ObjectType::Builder => json::decode(&read_file("objects/builder.json")).unwrap(),
+        };
+        object.owner = owner;
+        object.name = name;
+        object.x = x;
+        object.y = y;
+        object.drive_dest_x = x;
+        object.drive_dest_y = y;
+        object
     }
 
     pub fn drive_move_to(&mut self, x: f64, y: f64) {
@@ -279,4 +200,14 @@ impl SampleObject {
 
 pub fn distance(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
     ((x1 - x2).powf(2.0) + (y1 - y2).powf(2.0)).sqrt()
+}
+
+fn read_file(path: &str) -> String {
+    let mut file = match File::open(path) {
+        Ok(data) => data,
+        Err(e) => panic!("Game config file open error: {:?}", e),
+    };
+    let mut string = String::new();
+    file.read_to_string(&mut string).unwrap();
+    string
 }
