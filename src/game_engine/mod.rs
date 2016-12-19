@@ -136,11 +136,11 @@ impl GameEngine {
                                           move |engine, mut object| {
                     if object.cargo_remove(1.0) {
                         engine.add_event(Event::Damage(DamageEvent {
-                            x: object.weapon_target_x,
-                            y: object.weapon_target_y,
+                            x: f_e.dest_x,
+                            y: f_e.dest_y,
                             size: object.weapon_radius,
                             d_type: object.weapon_type.clone(),
-                            damage: 1.0,
+                            damage: 10.0,
                         }));
                     }
                 });

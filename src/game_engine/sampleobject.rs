@@ -134,7 +134,7 @@ impl SampleObject {
                     radar_type: RadarType::Military,
                     weapon_active: false,
                     weapon_type: WeaponType::Laser,
-                    weapon_radius: 50.0,
+                    weapon_radius: 1.0,
                     weapon_target_x: x,
                     weapon_target_y: y,
                     cargo_type: CargoType::Battery,
@@ -278,5 +278,5 @@ impl SampleObject {
 }
 
 pub fn distance(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
-    ((x1 - x2).powi(2) + (y1 - y2).powi(2)).sqrt()
+    ((x1 - x2).powf(2.0) + (y1 - y2).powf(2.0)).sqrt()
 }
