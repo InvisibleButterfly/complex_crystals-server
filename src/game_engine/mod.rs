@@ -17,7 +17,7 @@ pub struct ServerInfo {
 
 pub struct GameEngine {
     pub info: ServerInfo,
-    pub objects: HashMap<String, Arc<RwLock<SampleObject>>>,
+    pub objects: HashMap<String, SampleObject>,
     pub world_size_x: f64,
     pub world_size_y: f64,
     pub events: VecDeque<Event>,
@@ -51,57 +51,75 @@ impl GameEngine {
                       otype: ObjectType,
                       owner: String) {
         self.objects.insert(object_name.clone(),
-                            Arc::new(RwLock::new(SampleObject::new(owner,
-                                                                   object_name,
-                                                                   otype,
-                                                                   coord_x,
-                                                                   coord_y))));
+                            SampleObject::new(owner, object_name, otype, coord_x, coord_y));
     }
 
-    pub fn get_object(&self, name: String) -> Option<Arc<RwLock<SampleObject>>> {
-        self.objects.get(&name).map(|x| x.clone())
-    }
-
-    pub fn get_object_with_owner(&self,
-                                 name: String,
-                                 owner: String)
-                                 -> Option<Arc<RwLock<SampleObject>>> {
-        let o_object = match self.objects.get(&name) {
-            Some(e) => e,
+    pub fn get_object_with_owner(&self, name: String, owner: String) -> Option<SampleObject> {
+        match self.objects.get(&name) {
+            Some(obj) => {
+                if obj.owner != owner {
+                    return None;
+                } else {
+                    return Some(obj.clone());
+                }
+            }
             None => return None, 
         };
-        {
-            let object = o_object.read().unwrap();
-            if object.owner != owner {
-                return None;
+    }
+
+    pub fn check_object_owner(&self, object: &SampleObject, owner: Option<&String>) -> bool {
+        if let Some(owner) = owner {
+            object.owner.eq(owner)
+        } else {
+            true
+        }
+    }
+
+    pub fn check_object_exsists(&self, name: &String, owner: Option<&String>) -> bool {
+        if let Some(object) = self.objects.get(name) {
+            if let Some(owner) = owner {
+                object.owner.eq(owner)
+            } else {
+                true
             }
+        } else {
+            false
         }
-        Some(o_object.clone())
     }
 
-    pub fn interact_with_object<F>(&mut self, name: String, owner: String, closure: F)
-        where F: Fn(&mut GameEngine, RwLockWriteGuard<SampleObject>)
-    {
-        let object = match self.objects.get(&name) {
-            Some(e) => e.clone(),
-            None => return,
-        };
-        let object = object.write().unwrap();
-        if object.owner != owner {
-            return;
+    pub fn get_object_mut(&mut self,
+                          name: &String,
+                          owner: Option<&String>)
+                          -> Option<&mut SampleObject> {
+        if let Some(object) = self.objects.get_mut(name) {
+            if let Some(owner) = owner {
+                if object.owner.eq(owner) {
+                    Some(object)
+                } else {
+                    None
+                }
+            } else {
+                Some(object)
+            }
+        } else {
+            None
         }
-        closure(self, object);
     }
 
-    pub fn interact<F>(&mut self, name: String, closure: F)
-        where F: Fn(&mut GameEngine, RwLockWriteGuard<SampleObject>)
-    {
-        let object = match self.objects.get(&name) {
-            Some(e) => e.clone(),
-            None => return,
-        };
-        let object = object.write().unwrap();
-        closure(self, object);
+    pub fn get_object(&mut self, name: &String, owner: Option<&String>) -> Option<&SampleObject> {
+        if let Some(object) = self.objects.get(name) {
+            if let Some(owner) = owner {
+                if object.owner.eq(owner) {
+                    Some(object)
+                } else {
+                    None
+                }
+            } else {
+                Some(object)
+            }
+        } else {
+            None
+        }
     }
 
     pub fn game_loop(&mut self, elapsed: f64) {
@@ -111,58 +129,63 @@ impl GameEngine {
     pub fn add_event(&mut self, event: Event) {
         self.events.push_front(event);
     }
+
     fn event(&mut self, elapsed: f64) {
         let event = match self.events.pop_back() {
             Some(e) => e,
             None => return,
         };
-        match event {
+        let return_event: Option<Event> = match event {
             Event::MoveRequest(m_e) => {
-                self.interact_with_object(m_e.name.clone(),
-                                          m_e.owner.clone(),
-                                          |engine, mut object| {
-                    object.drive_dest_x = m_e.dest_x;
-                    object.drive_dest_y = m_e.dest_y;
-                    engine.add_event(Event::Move(MoveEvent {
-                        name: m_e.name.clone(),
+                if self.check_object_exsists(&m_e.name, Some(&m_e.owner)) {
+                    Some(Event::Move(MoveEvent {
+                        name: m_e.name,
                         dest_x: m_e.dest_x,
                         dest_y: m_e.dest_y,
-                    }));
-                });
+                    }))
+                } else {
+                    None
+                }
             }
+
             Event::FireRequest(f_e) => {
-                self.interact_with_object(f_e.name.clone(),
-                                          f_e.owner.clone(),
-                                          move |engine, mut object| {
+                if let Some(object) = self.get_object_mut(&f_e.name, Some(&f_e.owner)) {
                     if object.cargo_remove(1.0) {
-                        engine.add_event(Event::Damage(DamageEvent {
+                        Some(Event::Damage(DamageEvent {
                             x: f_e.dest_x,
                             y: f_e.dest_y,
                             size: object.weapon_radius,
                             d_type: object.weapon_type.clone(),
                             damage: 10.0,
-                        }));
+                        }))
+                    } else {
+                        None
                     }
-                });
+                } else {
+                    None
+                }
             }
             Event::BuildRequest(b_e) => {
-                self.interact_with_object(b_e.name.clone(), b_e.owner.clone(), |engine, _| {
-                    engine.add_event(Event::Build(BuildEvent {
-                        name: b_e.name.clone(),
-                        b_name: b_e.b_name.clone(),
+                if let Some(object) = self.get_object(&b_e.name, Some(&b_e.owner)) {
+                    Some(Event::Build(BuildEvent {
+                        name: b_e.name,
+                        b_name: b_e.b_name,
                         b_type: b_e.b_type.clone(),
                         speed: 0.1,
                         progress: 0.0,
                         max_progress: 100.0,
-                    }));
-                });
+                    }))
+                } else {
+                    None
+                }
             }
             Event::Move(m_e) => {
-                self.interact(m_e.name.clone(), |engine, mut object| {
+                if let Some(object) = self.get_object_mut(&m_e.name, None) {
                     if distance(object.x, object.y, object.drive_dest_x, object.drive_dest_y) <
                        object.drive_speed * elapsed {
                         object.x = object.drive_dest_x;
                         object.y = object.drive_dest_y;
+                        None
                     } else {
                         if !((object.x - m_e.dest_x).abs() < ::FLOAT_ERR) {
                             if object.x < m_e.dest_x {
@@ -178,46 +201,61 @@ impl GameEngine {
                                 object.y -= object.drive_speed * elapsed;
                             }
                         }
-                        engine.add_event(Event::Move(m_e.clone()));
+                        Some(Event::Move(m_e))
                     }
-                });
+                } else {
+                    None
+                }
             }
             Event::Destroy(d_e) => {
-                self.objects.remove(&d_e.name);
+                if self.check_object_exsists(&d_e.name, None) {
+                    self.objects.remove(&d_e.name);
+                }
+                None
             }
             Event::Damage(d_e) => {
-                for i in self.objects.clone().iter() {
-                    let (_, v) = i;
-                    let mut object = v.write().unwrap();
+                let mut events = vec![];
+                for i in self.objects.iter_mut() {
+                    let (_, mut object) = i;
 
                     if sampleobject::distance(object.x, object.y, d_e.x, d_e.y) <= d_e.size {
                         object.shell_damage(d_e.d_type.clone(), d_e.damage);
                         if object.shell_health <= 0.0 {
-                            self.add_event(Event::Destroy(DestroyEvent {
-                                name: object.name.clone(),
-                            }));
+                            events.push(Event::Destroy(DestroyEvent { name: object.name.clone() }));
                         }
                     }
                 }
+                for ev in events {
+                    self.add_event(ev);
+                }
+                None
             }
             Event::Build(b_e) => {
                 if b_e.progress >= b_e.max_progress {
-                    let object = match self.get_object(b_e.name) {
-                        Some(e) => e,
-                        None => return,
+                    let result_object = {
+                        if let Some(object) = self.get_object(&b_e.name, None) {
+                            Some(SampleObject::new(object.owner.clone(),
+                                                   b_e.b_name,
+                                                   b_e.b_type,
+                                                   object.x,
+                                                   object.y))
+                        } else {
+                            None
+                        }
                     };
-                    let object = object.read().unwrap();
-                    self.add_object(b_e.b_name.clone(),
-                                    object.x,
-                                    object.y,
-                                    b_e.b_type.clone(),
-                                    object.owner.clone());
+                    if let Some(object) = result_object {
+                        self.objects.insert(object.name.clone(), object).unwrap();
+                    }
+                    None
                 } else {
                     let mut new_event = b_e.clone();
                     new_event.progress += b_e.speed * elapsed;
-                    self.add_event(Event::Build(new_event));
+                    Some(Event::Build(new_event))
                 }
             }
+        };
+        if let Some(ev) = return_event {
+            self.add_event(ev);
         }
     }
 }

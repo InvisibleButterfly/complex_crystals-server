@@ -26,7 +26,7 @@ pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
         .iter()
         .map(|x| {
             let (_, v) = x;
-            let obj = v.read().unwrap().clone();
+            let obj = v.clone();
             SampleObject {
                 owner: obj.owner,
                 name: obj.name,
@@ -82,69 +82,68 @@ pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String)
 
 pub fn radar(mutex: &Arc<Mutex<GameEngine>>, request: String, owner: String) -> Option<String> {
     // TODO Сделать что-то с этим ужасом
-    let engine = mutex.lock().unwrap();
-    match json::decode(&request) {
-        Err(e) => {
-            println!("Json parsing error: {:?}", e);
-            return None;
-        }
-        Ok(data) => {
-            let name: NameResponse = data;
-            let option_object = engine.get_object(name.name).unwrap();
-            let object = option_object.read().unwrap();
+    // let engine = mutex.lock().unwrap();
+    // match json::decode(&request) {
+    //     Err(e) => {
+    //         println!("Json parsing error: {:?}", e);
+    //         return None;
+    //     }
+    //     Ok(data) => {
+    //         let name: NameResponse = data;
+    //         let object = engine.objects.get(&name.name).unwrap();
 
-            if object.owner != owner {
-                return None;
-            }
+    //         if object.owner != owner {
+    //             return None;
+    //         }
 
-            let objects = match object.radar_scan(engine.objects.clone()) {
-                Some(expr) => expr,
-                None => return None,
-            };
+    //         let objects = match object.radar_scan(&engine.objects) {
+    //             Some(expr) => expr,
+    //             None => return None,
+    //         };
 
-            match object.radar_type {
-                RadarType::None => return None,
-                RadarType::Simple => {
-                    let mut result = Vec::new();
-                    for obj in objects {
-                        let obj = obj.read().unwrap();
-                        result.push(SimpleRadarRequest {
-                            x: obj.x,
-                            y: obj.y,
-                        });
-                    }
-                    return Some(json::encode(&result).unwrap());
-                }
-                RadarType::Middle => {
-                    let mut result = Vec::new();
-                    for obj in objects {
-                        let obj = obj.read().unwrap().clone();
-                        result.push(MiddleRadarRequest {
-                            x: obj.x,
-                            y: obj.y,
-                            name: obj.name.clone(),
-                            otype: obj.otype,
-                        });
-                    }
-                    return Some(json::encode(&result).unwrap());
-                }
-                RadarType::Military => {
-                    let mut result = Vec::new();
-                    for obj in objects {
-                        let obj = obj.read().unwrap();
-                        result.push(MilitaryRadarRequest {
-                            x: obj.x,
-                            y: obj.y,
-                            name: obj.name.clone(),
-                            otype: obj.otype.clone(),
-                            speed: obj.drive_speed,
-                        });
-                    }
-                    return Some(json::encode(&result).unwrap());
-                }
-            }
-        }        
-    }
+    //         match object.radar_type {
+    //             RadarType::None => return None,
+    //             RadarType::Simple => {
+    //                 let mut result = Vec::new();
+    //                 for obj in objects {
+    //                     let obj = obj.read().unwrap();
+    //                     result.push(SimpleRadarRequest {
+    //                         x: obj.x,
+    //                         y: obj.y,
+    //                     });
+    //                 }
+    //                 return Some(json::encode(&result).unwrap());
+    //             }
+    //             RadarType::Middle => {
+    //                 let mut result = Vec::new();
+    //                 for obj in objects {
+    //                     let obj = obj.read().unwrap().clone();
+    //                     result.push(MiddleRadarRequest {
+    //                         x: obj.x,
+    //                         y: obj.y,
+    //                         name: obj.name.clone(),
+    //                         otype: obj.otype,
+    //                     });
+    //                 }
+    //                 return Some(json::encode(&result).unwrap());
+    //             }
+    //             RadarType::Military => {
+    //                 let mut result = Vec::new();
+    //                 for obj in objects {
+    //                     let obj = obj.read().unwrap();
+    //                     result.push(MilitaryRadarRequest {
+    //                         x: obj.x,
+    //                         y: obj.y,
+    //                         name: obj.name.clone(),
+    //                         otype: obj.otype.clone(),
+    //                         speed: obj.drive_speed,
+    //                     });
+    //                 }
+    //                 return Some(json::encode(&result).unwrap());
+    //             }
+    //         }
+    //     }
+    // }
 
     None
 }

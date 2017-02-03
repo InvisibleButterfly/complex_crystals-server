@@ -196,6 +196,14 @@ impl SampleObject {
             }
         }
     }
+
+    pub fn check_owner(&self, owner: Option<&String>) -> bool {
+        if let Some(owner) = owner {
+            self.owner.eq(owner)
+        } else {
+            true
+        }
+    }
 }
 
 pub fn distance(x1: f64, y1: f64, x2: f64, y2: f64) -> f64 {
