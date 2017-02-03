@@ -5,7 +5,6 @@ mod config;
 use self::sampleobject::*;
 use self::events::*;
 use self::config::GameConfig;
-use std::sync::{Arc, RwLock, RwLockWriteGuard};
 use std::collections::{HashMap, VecDeque};
 
 #[derive(RustcDecodable, RustcEncodable, Clone)]
@@ -130,6 +129,22 @@ impl GameEngine {
         self.events.push_front(event);
     }
 
+    pub fn radar_scan(&self, owner: &String, only_enemies: bool) -> Vec<(f64, f64)> {
+        let mut radars = vec![];
+        for (_, obj) in self.objects.iter() {
+            if obj.check_owner(Some(owner)) {
+                radars.push(((obj.x, obj.y), obj.radar_radius));
+            }
+        }
+        let mut result_vec = vec![];
+        for (_, obj) in self.objects.iter() {
+            if only_enemies && !obj.check_owner(Some(owner)) {
+                result_vec.push((obj.x, obj.y));
+            }
+        }
+        result_vec
+    }
+
     fn event(&mut self, elapsed: f64) {
         let event = match self.events.pop_back() {
             Some(e) => e,
@@ -166,7 +181,7 @@ impl GameEngine {
                 }
             }
             Event::BuildRequest(b_e) => {
-                if let Some(object) = self.get_object(&b_e.name, Some(&b_e.owner)) {
+                if self.check_object_exsists(&b_e.name, Some(&b_e.owner)) {
                     Some(Event::Build(BuildEvent {
                         name: b_e.name,
                         b_name: b_e.b_name,
