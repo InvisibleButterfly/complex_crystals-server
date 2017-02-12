@@ -3,7 +3,6 @@ use ::game_engine::GameEngine;
 use ::game_engine::events::*;
 use ::rustc_serialize::json;
 use ::network_engine::structures::*;
-use ::game_engine::sampleobject::SampleObject;
 
 pub fn world_size(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     let engine = mutex.lock().unwrap();
@@ -21,37 +20,34 @@ pub fn info(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
 
 pub fn objects(mutex: &Arc<Mutex<GameEngine>>) -> Option<String> {
     let engine = mutex.lock().unwrap();
-    let objects: Vec<SampleObject> = engine.objects
-        .clone()
+    let objects: Vec<ObjectResponse> = engine.objects
         .iter()
         .map(|x| {
-            let (_, v) = x;
-            let obj = v.clone();
-            SampleObject {
-                owner: obj.owner,
-                name: obj.name,
-                otype: obj.otype,
+            let (_, obj) = x;
+            ObjectResponse {
+                name: obj.name.clone(),
+                owner: obj.owner.clone(),
                 x: obj.x,
                 y: obj.y,
-                drive_speed: obj.drive_speed,
-                drive_dest_x: obj.drive_dest_x,
-                drive_dest_y: obj.drive_dest_y,
-                radar_radius: obj.radar_radius,
-                radar_type: obj.radar_type,
-                weapon_active: obj.weapon_active,
-                weapon_type: obj.weapon_type,
-                weapon_radius: obj.weapon_radius,
-                weapon_target_x: obj.weapon_target_x,
-                weapon_target_y: obj.weapon_target_y,
-                cargo_type: obj.cargo_type,
-                cargo_max: obj.cargo_max,
-                cargo_current: obj.cargo_current,
-                shell_health: obj.shell_health,
-                shell_type: obj.shell_type,
+                otype: obj.otype.clone(),
             }
         })
         .collect();
     Some(json::encode(&objects).unwrap())
+}
+
+pub fn object_info(mutex: &Arc<Mutex<GameEngine>>,
+                   raw_json: String,
+                   owner: String)
+                   -> Option<String> {
+    let name: NameResponse = json::decode(&raw_json).unwrap();
+
+    let mut engine = mutex.lock().unwrap();
+    if let Some(object) = engine.get_object(&name.name, Some(&owner)) {
+        Some(json::encode(object).unwrap())
+    } else {
+        None
+    }
 }
 
 pub fn move_object(mutex: &Arc<Mutex<GameEngine>>, input: String, owner: String) -> bool {

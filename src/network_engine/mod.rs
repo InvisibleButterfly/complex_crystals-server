@@ -58,6 +58,16 @@ pub fn start(mutex: Arc<Mutex<GameEngine>>) {
             None => Ok(Response::with((status::Ok))), // TODO: Заменить на ошибку, хотя вряд ли она может тут возникнуть
         }
     });
+    let cloned_engine = mutex.clone();
+    router.add_route("object_info".to_string(), move |req: &mut Request| {
+        let mut buf = String::new();
+        req.body.read_to_string(&mut buf).unwrap();
+
+        match requests::object_info(&cloned_engine, buf, get_username(&req)) {
+            Some(response) => Ok(Response::with((status::Ok, response))),
+            None => Ok(Response::with((status::Ok))),
+        }
+    });
 
     let cloned_engine = mutex.clone();
     router.add_route("move".to_string(), move |req: &mut Request| {

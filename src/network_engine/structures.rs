@@ -13,6 +13,15 @@ pub struct MoveObjectRequest {
     pub y: f64,
 }
 
+#[derive(RustcEncodable)]
+pub struct ObjectResponse {
+    pub name: String,
+    pub owner: String,
+    pub x: f64,
+    pub y: f64,
+    pub otype: ObjectType,
+}
+
 #[derive(RustcDecodable)]
 pub struct NameResponse {
     pub name: String,
